@@ -4,7 +4,8 @@ import { useRouter } from 'expo-router';
 import {
   FileText, MapPin, DollarSign, Clapperboard, BookOpen,
   Aperture, Sparkles, Trophy, Palette, StickyNote,
-  ClipboardList, User, Users, Layers
+  ClipboardList, User, Users, Layers, Image, CloudSun,
+  Share2, Move, Paintbrush, Clock
 } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
 import Colors from '@/constants/colors';
@@ -25,23 +26,30 @@ const PRE_PROD_TOOLS: ToolItem[] = [
   { icon: ClipboardList, label: 'Call Sheets', subtitle: 'Daily crew sheets', route: '/call-sheets', color: '#FB923C' },
   { icon: Palette, label: 'Mood Boards', subtitle: 'Visual references', route: '/mood-boards', color: '#F472B6' },
   { icon: Users, label: 'Crew', subtitle: 'Cast & crew directory', route: '/crew-directory', color: '#A78BFA' },
+  { icon: Image, label: 'Shot References', subtitle: 'Visual shot library', route: '/shot-references', color: '#38BDF8' },
+  { icon: Move, label: 'Blocking', subtitle: 'Rehearsal & staging', route: '/blocking-notes', color: '#34D399' },
+  { icon: Paintbrush, label: 'Color / LUTs', subtitle: 'Look & grade references', route: '/color-references', color: '#E879F9' },
+  { icon: CloudSun, label: 'Weather', subtitle: 'Location forecasts', route: '/location-weather', color: '#06B6D4' },
 ];
 
 const ON_SET_TOOLS: ToolItem[] = [
   { icon: Clapperboard, label: 'Digital Slate', subtitle: 'Clapperboard', route: '/digital-slate', color: '#F87171' },
   { icon: BookOpen, label: 'Continuity', subtitle: 'Script supervisor notes', route: '/continuity', color: '#34D399' },
   { icon: StickyNote, label: 'Notes', subtitle: 'Production notes', route: '/production-notes', color: '#FCD34D' },
+  { icon: Clock, label: 'Time Tracker', subtitle: 'Hours & overtime', route: '/time-tracker', color: '#FB923C' },
 ];
 
 const POST_TOOLS: ToolItem[] = [
   { icon: Sparkles, label: 'VFX Tracker', subtitle: 'Visual effects shots', route: '/vfx-tracker', color: '#818CF8' },
-  { icon: Trophy, label: 'Festivals', subtitle: 'Submissions & deadlines', route: '/festivals', color: '#F59E0B' },
+  { icon: Trophy, label: 'Festivals', subtitle: 'Submissions & deadlines', route: '/festival-tracker', color: '#F59E0B' },
+  { icon: FileText, label: 'Wrap Reports', subtitle: 'Daily wrap summaries', route: '/wrap-reports', color: '#A78BFA' },
 ];
 
 const REFERENCE_TOOLS: ToolItem[] = [
   { icon: Aperture, label: 'Lens Calculator', subtitle: 'FOV & focal lengths', route: '/lens-calculator', color: '#06B6D4' },
   { icon: User, label: 'Portfolio', subtitle: 'Your credits & reel', route: '/portfolio', color: Colors.accent.gold },
   { icon: Layers, label: 'Frame Guides', subtitle: 'Aspect ratio previews', route: '/frame-guides', color: '#E879F9' },
+  { icon: Share2, label: 'Export & Share', subtitle: 'Share project data', route: '/export-share', color: '#94A3B8' },
 ];
 
 function ToolCard({ tool, index }: { tool: ToolItem; index: number }) {

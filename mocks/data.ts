@@ -1,4 +1,4 @@
-import { Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote, MoodBoardItem, DirectorCredit } from '@/types';
+import { Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote, MoodBoardItem, DirectorCredit, ShotReference, WrapReport, LocationWeather, BlockingNote, ColorReference, TimeEntry } from '@/types';
 
 export const SAMPLE_PROJECTS: Project[] = [
   {
@@ -237,6 +237,52 @@ export const BUDGET_CATEGORIES: { label: string; value: string }[] = [
   { label: 'Transport', value: 'transport' },
   { label: 'Contingency', value: 'contingency' },
   { label: 'Other', value: 'other' },
+];
+
+export const SAMPLE_SHOT_REFERENCES: ShotReference[] = [
+  { id: 'sr1', projectId: '1', shotId: 's1', sceneNumber: 1, title: 'Lighthouse establishing - Shutter Island ref', imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80', shotType: 'establishing', lightingStyle: 'Natural dusk', notes: 'Low angle, golden hour backlight. Reference Deakins.', tags: ['establishing', 'golden-hour', 'wide'] },
+  { id: 'sr2', projectId: '1', shotId: 's4', sceneNumber: 2, title: 'Hands detail insert - Tree of Life', imageUrl: 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=400&q=80', shotType: 'insert', lightingStyle: 'Practical warm', notes: 'Shallow DOF, warm practicals. Chivo style.', tags: ['close-up', 'insert', 'warm'] },
+  { id: 'sr3', projectId: '1', sceneNumber: 3, title: 'Darkness approaching sea - Annihilation', imageUrl: 'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=400&q=80', shotType: 'wide', lightingStyle: 'Desaturated', notes: 'VFX reference for darkness entity. Shimmer effect.', tags: ['vfx', 'wide', 'atmosphere'] },
+];
+
+export const SAMPLE_WRAP_REPORTS: WrapReport[] = [
+  { id: 'wr1', projectId: '1', scheduleDayId: 'd1', dayNumber: 1, date: '2026-03-15', callTime: '5:30 AM', actualWrap: '6:30 PM', scheduledWrap: '7:00 PM', scenesScheduled: 'Sc. 1, 5, 8', scenesCompleted: 'Sc. 1, 5', shotsPlanned: 8, shotsCompleted: 6, totalTakes: 18, circledTakes: 8, ngTakes: 3, pagesScheduled: '5 2/8', pagesCompleted: '3 6/8', overtimeMinutes: 0, notes: 'Wrapped 30min early. Sc.8 pushed to day 3 due to tide. Great golden hour footage.', safetyIncidents: 'None', weatherConditions: 'Clear, 62°F, light wind', createdAt: '2026-03-15T19:00:00' },
+];
+
+export const SAMPLE_LOCATION_WEATHER: LocationWeather[] = [
+  { id: 'lw1', locationId: 'loc1', date: '2026-03-15', sunrise: '7:18 AM', sunset: '7:24 PM', goldenHourAM: '7:18-7:48 AM', goldenHourPM: '6:54-7:24 PM', tempHigh: 62, tempLow: 48, condition: 'sunny', windSpeed: 12, humidity: 65, precipChance: 5, notes: 'Ideal for exterior shoots' },
+  { id: 'lw2', locationId: 'loc1', date: '2026-03-16', sunrise: '7:16 AM', sunset: '7:25 PM', goldenHourAM: '7:16-7:46 AM', goldenHourPM: '6:55-7:25 PM', tempHigh: 58, tempLow: 45, condition: 'partly-cloudy', windSpeed: 18, humidity: 72, precipChance: 20, notes: 'Wind may be an issue for sound' },
+  { id: 'lw3', locationId: 'loc1', date: '2026-03-17', sunrise: '7:15 AM', sunset: '7:26 PM', goldenHourAM: '7:15-7:45 AM', goldenHourPM: '6:56-7:26 PM', tempHigh: 55, tempLow: 42, condition: 'cloudy', windSpeed: 22, humidity: 80, precipChance: 45, notes: 'Rain contingency likely. Have cover set ready.' },
+];
+
+export const SAMPLE_BLOCKING_NOTES: BlockingNote[] = [
+  { id: 'bn1', projectId: '1', sceneNumber: 1, title: 'Keeper approaches lighthouse', description: 'Elena enters frame left, walks toward lighthouse door. Pauses at step 3 to look back at sea.', actorPositions: 'Start: frame left edge, 20ft from door. End: at door threshold.', cameraPosition: 'Camera A: wide on dolly track, parallel. Camera B: low angle at door.', movementNotes: 'Slow, deliberate pace. Wind pushes her forward. She resists slightly.', notes: 'Key beat: the pause and look back. This is where she decides.', createdAt: '2026-03-10T14:00:00' },
+  { id: 'bn2', projectId: '1', sceneNumber: 2, title: 'Spiral staircase climb', description: 'Steadicam follows Elena up 3 flights. She traces the wall with her right hand.', actorPositions: 'Start: bottom of stairs. End: landing before light room.', cameraPosition: 'Steadicam behind, slightly below. Tight on her back/shoulder.', movementNotes: 'Speed up gradually. By flight 3 she is almost running.', notes: 'Rehearse with stunt coord for safety on narrow stairs.', createdAt: '2026-03-10T15:00:00' },
+];
+
+export const SAMPLE_COLOR_REFERENCES: ColorReference[] = [
+  { id: 'cr1', projectId: '1', sceneNumber: 1, name: 'Exterior Dusk', lutStyle: 'warm-film', primaryColor: '#1a2940', secondaryColor: '#c8a04a', accentColor: '#e8d5b7', contrast: 'high', saturation: 'natural', temperature: 'warm', referenceFilm: 'The Lighthouse (2019)', notes: 'Rich golden hour warmth against cool ocean blues. Slight grain.' },
+  { id: 'cr2', projectId: '1', sceneNumber: 2, name: 'Interior Night', lutStyle: 'desaturated', primaryColor: '#1a1a2e', secondaryColor: '#8b6914', accentColor: '#4a3520', contrast: 'high', saturation: 'desaturated', temperature: 'warm', referenceFilm: 'Blade Runner 2049', notes: 'Mostly shadow. Practical oil lamp is key source. Pools of warm light.' },
+  { id: 'cr3', projectId: '1', sceneNumber: 3, name: 'Darkness Approach', lutStyle: 'bleach-bypass', primaryColor: '#0a0a14', secondaryColor: '#2a2a3e', accentColor: '#4466aa', contrast: 'high', saturation: 'desaturated', temperature: 'cool', referenceFilm: 'Annihilation', notes: 'Almost monochrome. Blue-black. The only color is from the lighthouse light.' },
+];
+
+export const SAMPLE_TIME_ENTRIES: TimeEntry[] = [
+  { id: 'te1', projectId: '1', scheduleDayId: 'd1', department: 'camera', date: '2026-03-15', callTime: '5:30 AM', wrapTime: '6:30 PM', lunchStart: '12:00 PM', lunchEnd: '12:30 PM', scheduledHours: 12, actualHours: 12.5, overtimeHours: 0.5, notes: 'DIT stayed extra 30min for backup' },
+  { id: 'te2', projectId: '1', scheduleDayId: 'd1', department: 'lighting', date: '2026-03-15', callTime: '4:30 AM', wrapTime: '7:00 PM', lunchStart: '12:00 PM', lunchEnd: '12:30 PM', scheduledHours: 12, actualHours: 14, overtimeHours: 2, notes: 'Early call for pre-rig. Late wrap for strike.' },
+  { id: 'te3', projectId: '1', scheduleDayId: 'd1', department: 'talent', date: '2026-03-15', callTime: '6:00 AM', wrapTime: '5:00 PM', lunchStart: '12:00 PM', lunchEnd: '1:00 PM', scheduledHours: 10, actualHours: 10, overtimeHours: 0, notes: '' },
+];
+
+export const LUT_STYLES: { label: string; value: string; description: string; colors: string[] }[] = [
+  { label: 'Neutral', value: 'neutral', description: 'Clean, balanced. No strong color bias.', colors: ['#888888', '#aaaaaa', '#666666'] },
+  { label: 'Warm Film', value: 'warm-film', description: 'Golden warmth. Classic Kodak look.', colors: ['#c8a04a', '#e8d5b7', '#8b6914'] },
+  { label: 'Cool Blue', value: 'cool-blue', description: 'Steel blue tones. Night, sci-fi.', colors: ['#4a6a8a', '#2a4060', '#8ab0d4'] },
+  { label: 'Desaturated', value: 'desaturated', description: 'Muted, low saturation. Drama, war.', colors: ['#7a7a7a', '#5a5a5a', '#9a9a9a'] },
+  { label: 'High Contrast', value: 'high-contrast', description: 'Deep blacks, bright highlights.', colors: ['#1a1a1a', '#f0f0f0', '#808080'] },
+  { label: 'Vintage', value: 'vintage', description: 'Faded, lifted blacks. 70s/80s feel.', colors: ['#8a7a5a', '#c8b090', '#5a5040'] },
+  { label: 'Bleach Bypass', value: 'bleach-bypass', description: 'Silver retention. Saving Private Ryan.', colors: ['#6a6a6a', '#3a3a3a', '#a0a0a0'] },
+  { label: 'Teal & Orange', value: 'teal-orange', description: 'Hollywood blockbuster look.', colors: ['#2a8080', '#e08040', '#1a5050'] },
+  { label: 'Noir', value: 'noir', description: 'High contrast B&W. Shadows rule.', colors: ['#1a1a1a', '#e0e0e0', '#404040'] },
+  { label: 'Pastel', value: 'pastel', description: 'Soft, airy. Wes Anderson palette.', colors: ['#c8a0a0', '#a0c8c0', '#c8c0a0'] },
 ];
 
 export const LENS_DATA = [

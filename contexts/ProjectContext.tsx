@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote, MoodBoardItem, DirectorCredit } from '@/types';
-import { SAMPLE_PROJECTS, SAMPLE_SHOTS, SAMPLE_SCHEDULE, SAMPLE_CREW, SAMPLE_TAKES, SAMPLE_SCENE_BREAKDOWNS, SAMPLE_LOCATIONS, SAMPLE_BUDGET, SAMPLE_CONTINUITY, SAMPLE_VFX, SAMPLE_FESTIVALS, SAMPLE_NOTES, SAMPLE_MOOD_BOARD, SAMPLE_CREDITS } from '@/mocks/data';
+import { Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote, MoodBoardItem, DirectorCredit, ShotReference, WrapReport, LocationWeather, BlockingNote, ColorReference, TimeEntry } from '@/types';
+import { SAMPLE_PROJECTS, SAMPLE_SHOTS, SAMPLE_SCHEDULE, SAMPLE_CREW, SAMPLE_TAKES, SAMPLE_SCENE_BREAKDOWNS, SAMPLE_LOCATIONS, SAMPLE_BUDGET, SAMPLE_CONTINUITY, SAMPLE_VFX, SAMPLE_FESTIVALS, SAMPLE_NOTES, SAMPLE_MOOD_BOARD, SAMPLE_CREDITS, SAMPLE_SHOT_REFERENCES, SAMPLE_WRAP_REPORTS, SAMPLE_LOCATION_WEATHER, SAMPLE_BLOCKING_NOTES, SAMPLE_COLOR_REFERENCES, SAMPLE_TIME_ENTRIES } from '@/mocks/data';
 
 const STORAGE_KEYS = {
   projects: 'mise_projects',
@@ -21,6 +21,12 @@ const STORAGE_KEYS = {
   notes: 'mise_notes',
   moodBoard: 'mise_mood_board',
   credits: 'mise_credits',
+  shotReferences: 'mise_shot_references',
+  wrapReports: 'mise_wrap_reports',
+  locationWeather: 'mise_location_weather',
+  blockingNotes: 'mise_blocking_notes',
+  colorReferences: 'mise_color_references',
+  timeEntries: 'mise_time_entries',
 };
 
 async function loadFromStorage<T>(key: string, fallback: T[]): Promise<T[]> {
@@ -92,6 +98,12 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
   const noteStore = useEntityStore<ProductionNote>('notes', STORAGE_KEYS.notes, SAMPLE_NOTES);
   const moodBoardStore = useEntityStore<MoodBoardItem>('moodBoard', STORAGE_KEYS.moodBoard, SAMPLE_MOOD_BOARD);
   const creditStore = useEntityStore<DirectorCredit>('credits', STORAGE_KEYS.credits, SAMPLE_CREDITS);
+  const shotRefStore = useEntityStore<ShotReference>('shotReferences', STORAGE_KEYS.shotReferences, SAMPLE_SHOT_REFERENCES);
+  const wrapReportStore = useEntityStore<WrapReport>('wrapReports', STORAGE_KEYS.wrapReports, SAMPLE_WRAP_REPORTS);
+  const locationWeatherStore = useEntityStore<LocationWeather>('locationWeather', STORAGE_KEYS.locationWeather, SAMPLE_LOCATION_WEATHER);
+  const blockingStore = useEntityStore<BlockingNote>('blockingNotes', STORAGE_KEYS.blockingNotes, SAMPLE_BLOCKING_NOTES);
+  const colorRefStore = useEntityStore<ColorReference>('colorReferences', STORAGE_KEYS.colorReferences, SAMPLE_COLOR_REFERENCES);
+  const timeEntryStore = useEntityStore<TimeEntry>('timeEntries', STORAGE_KEYS.timeEntries, SAMPLE_TIME_ENTRIES);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEYS.activeProject).then((id) => {
@@ -118,6 +130,12 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
   const productionNotes = noteStore.items;
   const moodBoardItems = moodBoardStore.items;
   const directorCredits = creditStore.items;
+  const shotReferences = shotRefStore.items;
+  const wrapReports = wrapReportStore.items;
+  const locationWeather = locationWeatherStore.items;
+  const blockingNotes = blockingStore.items;
+  const colorReferences = colorRefStore.items;
+  const timeEntries = timeEntryStore.items;
 
   const activeProject = projects.find(p => p.id === activeProjectId) ?? null;
   const isLoading = projectStore.isLoading || shotStore.isLoading || scheduleStore.isLoading || crewStore.isLoading || takeStore.isLoading;
@@ -126,6 +144,7 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
     projects, shots, schedule, crew, takes,
     sceneBreakdowns, locations, budgetItems, continuityNotes,
     vfxShots, festivals, productionNotes, moodBoardItems, directorCredits,
+    shotReferences, wrapReports, locationWeather, blockingNotes, colorReferences, timeEntries,
     activeProject, activeProjectId, isLoading,
     selectProject,
     addProject: projectStore.add, updateProject: projectStore.update, deleteProject: projectStore.remove,
@@ -142,6 +161,12 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
     addNote: noteStore.add, updateNote: noteStore.update, deleteNote: noteStore.remove,
     addMoodBoardItem: moodBoardStore.add, updateMoodBoardItem: moodBoardStore.update, deleteMoodBoardItem: moodBoardStore.remove,
     addCredit: creditStore.add, updateCredit: creditStore.update, deleteCredit: creditStore.remove,
+    addShotReference: shotRefStore.add, updateShotReference: shotRefStore.update, deleteShotReference: shotRefStore.remove,
+    addWrapReport: wrapReportStore.add, updateWrapReport: wrapReportStore.update, deleteWrapReport: wrapReportStore.remove,
+    addLocationWeather: locationWeatherStore.add, updateLocationWeather: locationWeatherStore.update, deleteLocationWeather: locationWeatherStore.remove,
+    addBlockingNote: blockingStore.add, updateBlockingNote: blockingStore.update, deleteBlockingNote: blockingStore.remove,
+    addColorReference: colorRefStore.add, updateColorReference: colorRefStore.update, deleteColorReference: colorRefStore.remove,
+    addTimeEntry: timeEntryStore.add, updateTimeEntry: timeEntryStore.update, deleteTimeEntry: timeEntryStore.remove,
   };
 });
 
@@ -198,4 +223,34 @@ export function useProjectNotes(projectId: string | null) {
 export function useProjectMoodBoard(projectId: string | null) {
   const { moodBoardItems } = useProjects();
   return moodBoardItems.filter(m => m.projectId === projectId);
+}
+
+export function useProjectShotReferences(projectId: string | null) {
+  const { shotReferences } = useProjects();
+  return shotReferences.filter(r => r.projectId === projectId);
+}
+
+export function useProjectWrapReports(projectId: string | null) {
+  const { wrapReports } = useProjects();
+  return wrapReports.filter(r => r.projectId === projectId).sort((a, b) => a.dayNumber - b.dayNumber);
+}
+
+export function useProjectBlockingNotes(projectId: string | null) {
+  const { blockingNotes } = useProjects();
+  return blockingNotes.filter(b => b.projectId === projectId).sort((a, b) => a.sceneNumber - b.sceneNumber);
+}
+
+export function useProjectColorReferences(projectId: string | null) {
+  const { colorReferences } = useProjects();
+  return colorReferences.filter(c => c.projectId === projectId);
+}
+
+export function useProjectTimeEntries(projectId: string | null) {
+  const { timeEntries } = useProjects();
+  return timeEntries.filter(t => t.projectId === projectId);
+}
+
+export function useLocationWeatherData(locationId: string | null) {
+  const { locationWeather } = useProjects();
+  return locationWeather.filter(w => w.locationId === locationId).sort((a, b) => a.date.localeCompare(b.date));
 }

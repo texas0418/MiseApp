@@ -211,3 +211,121 @@ export interface DirectorCredit {
   award?: string;
   notes: string;
 }
+
+// === NEW FEATURE TYPES ===
+
+// 1. Shot Storyboard / References
+export interface ShotReference {
+  id: string;
+  projectId: string;
+  shotId?: string;
+  sceneNumber?: number;
+  title: string;
+  imageUrl: string;
+  shotType?: ShotType;
+  lightingStyle?: string;
+  notes: string;
+  tags: string[];
+}
+
+// 2. Daily Wrap Report
+export interface WrapReport {
+  id: string;
+  projectId: string;
+  scheduleDayId: string;
+  dayNumber: number;
+  date: string;
+  callTime: string;
+  actualWrap: string;
+  scheduledWrap: string;
+  scenesScheduled: string;
+  scenesCompleted: string;
+  shotsPlanned: number;
+  shotsCompleted: number;
+  totalTakes: number;
+  circledTakes: number;
+  ngTakes: number;
+  pagesScheduled: string;
+  pagesCompleted: string;
+  overtimeMinutes: number;
+  notes: string;
+  safetyIncidents: string;
+  weatherConditions: string;
+  createdAt: string;
+}
+
+// 3. Location Weather
+export interface LocationWeather {
+  id: string;
+  locationId: string;
+  date: string;
+  sunrise: string;
+  sunset: string;
+  goldenHourAM: string;
+  goldenHourPM: string;
+  tempHigh: number;
+  tempLow: number;
+  condition: 'sunny' | 'partly-cloudy' | 'cloudy' | 'rain' | 'storm' | 'snow' | 'fog' | 'wind';
+  windSpeed: number;
+  humidity: number;
+  precipChance: number;
+  notes: string;
+}
+
+// 4. Export template types
+export type ExportFormat = 'shot-list' | 'call-sheet' | 'schedule' | 'wrap-report' | 'budget-summary';
+
+// 5. Blocking / Rehearsal Notes
+export interface BlockingNote {
+  id: string;
+  projectId: string;
+  sceneNumber: number;
+  title: string;
+  description: string;
+  actorPositions: string;
+  cameraPosition: string;
+  movementNotes: string;
+  diagramUrl?: string;
+  notes: string;
+  createdAt: string;
+}
+
+// 6. Color / LUT Reference
+export type LUTStyle = 'neutral' | 'warm-film' | 'cool-blue' | 'desaturated' | 'high-contrast' | 'vintage' | 'bleach-bypass' | 'teal-orange' | 'noir' | 'pastel';
+
+export interface ColorReference {
+  id: string;
+  projectId: string;
+  sceneNumber?: number;
+  name: string;
+  lutStyle: LUTStyle;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  contrast: 'low' | 'medium' | 'high';
+  saturation: 'desaturated' | 'natural' | 'saturated';
+  temperature: 'cool' | 'neutral' | 'warm';
+  referenceFilm?: string;
+  notes: string;
+}
+
+// 7. (Export/Share covered by ExportFormat above)
+
+// 8. Overtime / Time Tracker
+export interface TimeEntry {
+  id: string;
+  projectId: string;
+  scheduleDayId: string;
+  crewMemberId?: string;
+  department?: Department;
+  date: string;
+  callTime: string;
+  wrapTime: string;
+  lunchStart?: string;
+  lunchEnd?: string;
+  scheduledHours: number;
+  actualHours: number;
+  overtimeHours: number;
+  rate?: number;
+  notes: string;
+}
