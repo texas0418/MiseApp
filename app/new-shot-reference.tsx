@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import { ImagePlus } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
+import { showImagePickerOptions } from '@/utils/imagePicker';
 import Colors from '@/constants/colors';
 
 export default function NewShotReferenceScreen() {
@@ -20,7 +23,7 @@ export default function NewShotReferenceScreen() {
       id: Date.now().toString(),
       projectId: activeProjectId,
       title: title.trim(),
-      imageUrl: imageUrl.trim() || 'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=400&q=80',
+      imageUrl: imageUrl.trim() || '',
       sceneNumber: sceneNumber ? parseInt(sceneNumber) : undefined,
       lightingStyle: lightingStyle.trim() || undefined,
       notes: notes.trim(),
@@ -34,7 +37,25 @@ export default function NewShotReferenceScreen() {
       <Stack.Screen options={{ title: 'New Shot Reference' }} />
       <Text style={styles.label}>Title *</Text>
       <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="e.g. Blade Runner alley lighting" placeholderTextColor={Colors.text.tertiary} />
-      <Text style={styles.label}>Image URL</Text>
+      <Text style={styles.label}>Image</Text>
+      {imageUrl ? (
+        <View style={styles.imagePreviewWrap}>
+          <Image source={{ uri: imageUrl }} style={styles.imagePreview} contentFit="cover" />
+          <TouchableOpacity style={styles.changePhotoBtn} onPress={() => {
+            showImagePickerOptions((uri) => setImageUrl(uri));
+          }}>
+            <Text style={styles.changePhotoText}>Change Photo</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <TouchableOpacity style={styles.pickImageBtn} onPress={() => {
+          showImagePickerOptions((uri) => setImageUrl(uri));
+        }}>
+          <ImagePlus color={Colors.accent.gold} size={28} />
+          <Text style={styles.pickImageText}>Choose from Library or Camera</Text>
+        </TouchableOpacity>
+      )}
+      <Text style={styles.orText}>or paste a URL:</Text>
       <TextInput style={styles.input} value={imageUrl} onChangeText={setImageUrl} placeholder="https://..." placeholderTextColor={Colors.text.tertiary} autoCapitalize="none" />
       <Text style={styles.label}>Scene Number</Text>
       <TextInput style={styles.input} value={sceneNumber} onChangeText={setSceneNumber} placeholder="Optional" placeholderTextColor={Colors.text.tertiary} keyboardType="number-pad" />
@@ -60,4 +81,11 @@ const styles = StyleSheet.create({
   saveBtn: { backgroundColor: Colors.accent.gold, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
   saveBtnDisabled: { opacity: 0.4 },
   saveBtnText: { fontSize: 16, fontWeight: '700', color: Colors.text.inverse },
+  pickImageBtn: { backgroundColor: Colors.bg.elevated, borderRadius: 12, borderWidth: 1, borderColor: Colors.border.subtle, borderStyle: 'dashed', padding: 24, alignItems: 'center', gap: 8 },
+  pickImageText: { fontSize: 13, color: Colors.accent.gold, fontWeight: '600' },
+  imagePreviewWrap: { borderRadius: 12, overflow: 'hidden', marginBottom: 8 },
+  imagePreview: { width: '100%', height: 200, borderRadius: 12 },
+  changePhotoBtn: { position: 'absolute', bottom: 8, right: 8, backgroundColor: 'rgba(0,0,0,0.6)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  changePhotoText: { fontSize: 12, color: '#fff', fontWeight: '600' },
+  orText: { fontSize: 11, color: Colors.text.tertiary, marginTop: 10, marginBottom: 6 },
 });

@@ -1,8 +1,11 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Image } from 'expo-image';
+import { Camera, ImagePlus, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { useProjects } from '@/contexts/ProjectContext';
+import { showImagePickerOptions } from '@/utils/imagePicker';
 import Colors from '@/constants/colors';
 
 export default function NewLocationScreen() {
@@ -20,6 +23,17 @@ export default function NewLocationScreen() {
   const [notes, setNotes] = useState('');
   const [rating, setRating] = useState(3);
   const [scenes, setScenes] = useState('');
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+
+  const handleAddPhoto = useCallback(() => {
+    showImagePickerOptions((uri) => {
+      setPhotoUrls(prev => [...prev, uri]);
+    });
+  }, []);
+
+  const handleRemovePhoto = useCallback((index: number) => {
+    setPhotoUrls(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
   const handleSave = useCallback(() => {
     if (!activeProjectId) { Alert.alert('No Project', 'Select a project first.'); return; }
@@ -38,7 +52,7 @@ export default function NewLocationScreen() {
       powerAvailable,
       notes: notes.trim(),
       rating,
-      photoUrls: [],
+      photoUrls,
       scenes: scenes.trim() ? scenes.split(',').map(s => s.trim()) : [],
     });
     router.back();
@@ -119,6 +133,24 @@ export default function NewLocationScreen() {
       </View>
 
       <View style={styles.field}>
+        <Text style={styles.label}>Location Photos</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.photoScroll}>
+          {photoUrls.map((uri, i) => (
+            <View key={i} style={styles.photoThumb}>
+              <Image source={{ uri }} style={styles.photoImage} contentFit="cover" />
+              <TouchableOpacity style={styles.photoRemove} onPress={() => handleRemovePhoto(i)}>
+                <X color="#fff" size={12} />
+              </TouchableOpacity>
+            </View>
+          ))}
+          <TouchableOpacity style={styles.addPhotoBtn} onPress={handleAddPhoto}>
+            <ImagePlus color={Colors.accent.gold} size={24} />
+            <Text style={styles.addPhotoText}>Add Photo</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+
+      <View style={styles.field}>
         <Text style={styles.label}>Notes</Text>
         <TextInput style={[styles.input, styles.textArea]} value={notes} onChangeText={setNotes} placeholder="Power, parking, access notes..." placeholderTextColor={Colors.text.tertiary} multiline numberOfLines={3} textAlignVertical="top" />
       </View>
@@ -149,6 +181,12 @@ const styles = StyleSheet.create({
   ratingTextActive: { color: Colors.accent.gold },
   saveButton: { backgroundColor: Colors.accent.gold, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 12 },
   saveButtonText: { fontSize: 16, fontWeight: '700' as const, color: Colors.text.inverse },
+  photoScroll: { flexDirection: 'row' },
+  photoThumb: { width: 80, height: 80, borderRadius: 10, marginRight: 10, overflow: 'hidden' },
+  photoImage: { width: 80, height: 80 },
+  photoRemove: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10, width: 20, height: 20, justifyContent: 'center', alignItems: 'center' },
+  addPhotoBtn: { width: 80, height: 80, borderRadius: 10, backgroundColor: Colors.bg.elevated, borderWidth: 1, borderColor: Colors.border.subtle, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center', gap: 4 },
+  addPhotoText: { fontSize: 9, color: Colors.accent.gold, fontWeight: '600' as const },
   emptyContainer: { flex: 1, backgroundColor: Colors.bg.primary, justifyContent: 'center', alignItems: 'center', padding: 40 },
   emptyTitle: { fontSize: 18, fontWeight: '600' as const, color: Colors.text.primary },
 });
