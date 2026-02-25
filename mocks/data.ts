@@ -1,4 +1,4 @@
-import { Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote, MoodBoardItem, DirectorCredit, ShotReference, WrapReport, LocationWeather, BlockingNote, ColorReference, TimeEntry, ScriptSide, CastMember, LookbookItem, DirectorStatement, SceneSelect } from '@/types';
+import { Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote, MoodBoardItem, DirectorCredit, ShotReference, WrapReport, LocationWeather, BlockingNote, ColorReference, TimeEntry, ScriptSide, CastMember, LookbookItem, DirectorStatement, SceneSelect, DirectorMessage } from '@/types';
 
 export const SAMPLE_PROJECTS: Project[] = [
   {
@@ -434,5 +434,35 @@ export const SAMPLE_SELECTS: SceneSelect[] = [
     performanceNote: 'Best take of the entire shoot. The crack in her voice was unplanned.',
     technicalNote: 'Locked off, no issues.', timecode: '02:15:33:04',
     createdAt: '2025-03-17T19:30:00Z',
+  },
+];
+
+// === COMMUNICATION HUB ===
+export const MESSAGE_TEMPLATES: { category: DirectorMessage['category']; label: string; subject: string; body: string; defaultRecipients: string[] }[] = [
+  { category: 'moving-on', label: 'Moving On', subject: 'Moving on from Scene {scene}', body: 'We are moving on from Scene {scene}. Next up: Scene {next}. Please reset for the new setup.', defaultRecipients: ['All Departments'] },
+  { category: 'pickup', label: 'Pickup Needed', subject: 'Pickup needed — Scene {scene}', body: 'We need a pickup on Scene {scene}, Shot {shot}. Reason: {reason}. Please stand by for setup details.', defaultRecipients: ['Camera', 'Sound', 'Lighting'] },
+  { category: 'schedule-change', label: 'Schedule Change', subject: 'Revised schedule — {detail}', body: 'Please note the following schedule change: {detail}. Updated call sheet will follow.', defaultRecipients: ['All Departments'] },
+  { category: 'schedule-change', label: 'Revised Call Time', subject: 'Updated call time — {time}', body: 'Tomorrow\'s call time has been revised to {time}. Please adjust accordingly and confirm receipt.', defaultRecipients: ['All Departments'] },
+  { category: 'safety', label: 'Safety Alert', subject: 'SAFETY: {detail}', body: 'Safety notice: {detail}. All crew please acknowledge and follow safety protocols.', defaultRecipients: ['All Departments'] },
+  { category: 'creative', label: 'Creative Direction', subject: 'Creative note — Scene {scene}', body: '{note}', defaultRecipients: ['Camera', 'Art', 'Talent'] },
+  { category: 'general', label: 'Lunch Break', subject: 'Lunch — back at {time}', body: 'We are breaking for lunch. Back on set at {time}. Please be prompt.', defaultRecipients: ['All Departments'] },
+  { category: 'general', label: 'That\'s a Wrap', subject: 'WRAP — Day {day}', body: 'That\'s a wrap on Day {day}! Great work everyone. Call sheet for tomorrow will be sent by {time}. Thank you.', defaultRecipients: ['All Departments'] },
+];
+
+export const SAMPLE_MESSAGES: DirectorMessage[] = [
+  {
+    id: 'msg-1', projectId: '1', category: 'moving-on', priority: 'normal',
+    subject: 'Moving on from Scene 1', body: 'We are moving on from Scene 1. Next up: Scene 5. Please reset for the new setup.',
+    recipients: ['All Departments'], sentAt: '2025-03-15T11:30:00Z', sceneNumber: 1,
+  },
+  {
+    id: 'msg-2', projectId: '1', category: 'pickup', priority: 'urgent',
+    subject: 'Pickup needed — Scene 5', body: 'We need a pickup on Scene 5, Shot 5B. Reason: dolly bump at end of take. Please stand by for setup details.',
+    recipients: ['Camera', 'Sound', 'Lighting'], sentAt: '2025-03-17T15:45:00Z', sceneNumber: 5,
+  },
+  {
+    id: 'msg-3', projectId: '1', category: 'general', priority: 'normal',
+    subject: 'WRAP — Day 1', body: 'That\'s a wrap on Day 1! Great work everyone. Call sheet for tomorrow will be sent by 8PM. Thank you.',
+    recipients: ['All Departments'], sentAt: '2025-03-15T19:00:00Z',
   },
 ];

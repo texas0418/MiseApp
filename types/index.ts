@@ -364,3 +364,18 @@ export interface SceneSelect {
   rating: SelectRating; isCircled: boolean; isAlt: boolean; editorNote: string;
   performanceNote: string; technicalNote: string; timecode?: string; createdAt: string;
 }
+
+// Communication Hub
+export type MessagePriority = 'normal' | 'urgent' | 'fyi';
+export type MessageCategory = 'moving-on' | 'pickup' | 'schedule-change' | 'safety' | 'creative' | 'general';
+export interface DirectorMessage {
+  id: string;
+  projectId: string;
+  category: MessageCategory;
+  priority: MessagePriority;
+  subject: string;
+  body: string;
+  recipients: string[]; // department names or crew member names
+  sentAt: string;
+  sceneNumber?: number;
+}

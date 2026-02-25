@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote, MoodBoardItem, DirectorCredit, ShotReference, WrapReport, LocationWeather, BlockingNote, ColorReference, TimeEntry, ScriptSide, CastMember, LookbookItem, DirectorStatement, SceneSelect } from '@/types';
-import { SAMPLE_PROJECTS, SAMPLE_SHOTS, SAMPLE_SCHEDULE, SAMPLE_CREW, SAMPLE_TAKES, SAMPLE_SCENE_BREAKDOWNS, SAMPLE_LOCATIONS, SAMPLE_BUDGET, SAMPLE_CONTINUITY, SAMPLE_VFX, SAMPLE_FESTIVALS, SAMPLE_NOTES, SAMPLE_MOOD_BOARD, SAMPLE_CREDITS, SAMPLE_SHOT_REFERENCES, SAMPLE_WRAP_REPORTS, SAMPLE_LOCATION_WEATHER, SAMPLE_BLOCKING_NOTES, SAMPLE_COLOR_REFERENCES, SAMPLE_TIME_ENTRIES, SAMPLE_SCRIPT_SIDES, SAMPLE_CAST, SAMPLE_LOOKBOOK, SAMPLE_DIRECTOR_STATEMENT, SAMPLE_SELECTS } from '@/mocks/data';
+import { Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote, MoodBoardItem, DirectorCredit, ShotReference, WrapReport, LocationWeather, BlockingNote, ColorReference, TimeEntry, ScriptSide, CastMember, LookbookItem, DirectorStatement, SceneSelect, DirectorMessage } from '@/types';
+import { SAMPLE_PROJECTS, SAMPLE_SHOTS, SAMPLE_SCHEDULE, SAMPLE_CREW, SAMPLE_TAKES, SAMPLE_SCENE_BREAKDOWNS, SAMPLE_LOCATIONS, SAMPLE_BUDGET, SAMPLE_CONTINUITY, SAMPLE_VFX, SAMPLE_FESTIVALS, SAMPLE_NOTES, SAMPLE_MOOD_BOARD, SAMPLE_CREDITS, SAMPLE_SHOT_REFERENCES, SAMPLE_WRAP_REPORTS, SAMPLE_LOCATION_WEATHER, SAMPLE_BLOCKING_NOTES, SAMPLE_COLOR_REFERENCES, SAMPLE_TIME_ENTRIES, SAMPLE_SCRIPT_SIDES, SAMPLE_CAST, SAMPLE_LOOKBOOK, SAMPLE_DIRECTOR_STATEMENT, SAMPLE_SELECTS, SAMPLE_MESSAGES } from '@/mocks/data';
 
 const STORAGE_KEYS = {
   projects: 'mise_projects',
@@ -32,6 +32,7 @@ const STORAGE_KEYS = {
   lookbook: 'mise_lookbook',
   directorStatement: 'mise_director_statement',
   selects: 'mise_selects',
+  messages: 'mise_messages',
 };
 
 async function loadFromStorage<T>(key: string, fallback: T[]): Promise<T[]> {
@@ -40,12 +41,18 @@ async function loadFromStorage<T>(key: string, fallback: T[]): Promise<T[]> {
     const stored = await AsyncStorage.getItem(key);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed : safeFallback;
+      if (Array.isArray(parsed)) return parsed;
+      // Invalid data — remove and use fallback
+      await AsyncStorage.removeItem(key);
     }
-    await AsyncStorage.setItem(key, JSON.stringify(safeFallback));
+    if (safeFallback.length > 0) {
+      await AsyncStorage.setItem(key, JSON.stringify(safeFallback));
+    }
     return safeFallback;
   } catch (e) {
     console.log('Storage load error:', e);
+    // Remove corrupted key
+    try { await AsyncStorage.removeItem(key); } catch (_) {}
     return safeFallback;
   }
 }
@@ -118,6 +125,7 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
   const lookbookStore = useEntityStore<LookbookItem>('lookbook', STORAGE_KEYS.lookbook, SAMPLE_LOOKBOOK);
   const directorStatementStore = useEntityStore<DirectorStatement>('directorStatement', STORAGE_KEYS.directorStatement, SAMPLE_DIRECTOR_STATEMENT);
   const selectStore = useEntityStore<SceneSelect>('selects', STORAGE_KEYS.selects, SAMPLE_SELECTS);
+  const messageStore = useEntityStore<DirectorMessage>('messages', STORAGE_KEYS.messages, SAMPLE_MESSAGES);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEYS.activeProject).then((id) => {
@@ -155,6 +163,7 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
   const lookbookItems = lookbookStore.items;
   const directorStatements = directorStatementStore.items;
   const sceneSelects = selectStore.items;
+  const directorMessages = messageStore.items;
 
   const activeProject = projects.find(p => p.id === activeProjectId) ?? null;
   const isLoading = projectStore.isLoading || shotStore.isLoading || scheduleStore.isLoading || crewStore.isLoading || takeStore.isLoading;
@@ -164,7 +173,7 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
     sceneBreakdowns, locations, budgetItems, continuityNotes,
     vfxShots, festivals, productionNotes, moodBoardItems, directorCredits,
     shotReferences, wrapReports, locationWeather, blockingNotes, colorReferences, timeEntries,
-    scriptSides, castMembers, lookbookItems, directorStatements, sceneSelects,
+    scriptSides, castMembers, lookbookItems, directorStatements, sceneSelects, directorMessages,
     activeProject, activeProjectId, isLoading,
     selectProject,
     addProject: projectStore.add, updateProject: projectStore.update, deleteProject: projectStore.remove,
@@ -192,6 +201,7 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
     addLookbookItem: lookbookStore.add, updateLookbookItem: lookbookStore.update, deleteLookbookItem: lookbookStore.remove,
     addDirectorStatement: directorStatementStore.add, updateDirectorStatement: directorStatementStore.update, deleteDirectorStatement: directorStatementStore.remove,
     addSceneSelect: selectStore.add, updateSceneSelect: selectStore.update, deleteSceneSelect: selectStore.remove,
+    addMessage: messageStore.add, updateMessage: messageStore.update, deleteMessage: messageStore.remove,
   };
 });
 
@@ -217,3 +227,4 @@ export function useProjectCast(projectId: string | null) { const { castMembers }
 export function useProjectLookbook(projectId: string | null) { const { lookbookItems } = useProjects(); return lookbookItems.filter(l => l.projectId === projectId).sort((a, b) => a.sortOrder - b.sortOrder); }
 export function useProjectDirectorStatement(projectId: string | null) { const { directorStatements } = useProjects(); return (directorStatements ?? []).find(s => s.projectId === projectId) ?? null; }
 export function useProjectSelects(projectId: string | null) { const { sceneSelects } = useProjects(); return sceneSelects.filter(s => s.projectId === projectId).sort((a, b) => a.sceneNumber - b.sceneNumber || a.shotNumber.localeCompare(b.shotNumber) || b.rating - a.rating); }
+export function useProjectMessages(projectId: string | null) { const { directorMessages } = useProjects(); return (directorMessages ?? []).filter(m => m.projectId === projectId).sort((a, b) => b.sentAt.localeCompare(a.sentAt)); }

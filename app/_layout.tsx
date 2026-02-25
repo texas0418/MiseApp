@@ -70,6 +70,8 @@ function RootLayoutNav() {
       <Stack.Screen name="new-lookbook-item" options={{ presentation: "modal", title: "New Lookbook Item" }} />
       <Stack.Screen name="selects" options={{ title: "Selects" }} />
       <Stack.Screen name="new-select" options={{ presentation: "modal", title: "New Select" }} />
+      <Stack.Screen name="comms-hub" options={{ title: "Comms Hub" }} />
+      <Stack.Screen name="new-message" options={{ presentation: "modal", title: "New Message" }} />
     </Stack>
   );
 }
