@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Plus, Film, ChevronRight } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
+import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { Project, ProjectStatus } from '@/types';
 
@@ -85,18 +86,22 @@ function ProjectCard({ project, index, onPress }: { project: Project; index: num
 export default function ProjectsScreen() {
   const { projects, activeProjectId, selectProject, isLoading } = useProjects();
   const router = useRouter();
+  const { isTablet, gridColumns, contentPadding } = useLayout();
+  const columns = isTablet ? Math.min(gridColumns, 2) : 1;
 
   const handleProjectPress = useCallback((project: Project) => {
     selectProject(project.id);
   }, [selectProject]);
 
   const renderProject = useCallback(({ item, index }: { item: Project; index: number }) => (
-    <ProjectCard
-      project={item}
-      index={index}
-      onPress={() => handleProjectPress(item)}
-    />
-  ), [handleProjectPress]);
+    <View style={isTablet ? { flex: 1 / columns, padding: 8 } : {}}>
+      <ProjectCard
+        project={item}
+        index={index}
+        onPress={() => handleProjectPress(item)}
+      />
+    </View>
+  ), [handleProjectPress, isTablet, columns]);
 
   if (isLoading) {
     return (
@@ -120,7 +125,9 @@ export default function ProjectsScreen() {
         data={projects}
         keyExtractor={item => item.id}
         renderItem={renderProject}
-        contentContainerStyle={styles.list}
+        numColumns={columns}
+        key={`projects-${columns}`}
+        contentContainerStyle={[styles.list, { paddingHorizontal: contentPadding }]}
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View style={styles.header}>

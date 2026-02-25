@@ -8,6 +8,7 @@ import {
   Share2, Move, Paintbrush, Clock
 } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
+import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 
 interface ToolItem {
@@ -54,6 +55,7 @@ const REFERENCE_TOOLS: ToolItem[] = [
 
 function ToolCard({ tool, index }: { tool: ToolItem; index: number }) {
   const router = useRouter();
+  const { isTablet, gridColumns } = useLayout();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
@@ -65,9 +67,10 @@ function ToolCard({ tool, index }: { tool: ToolItem; index: number }) {
   }, []);
 
   const Icon = tool.icon;
+  const cardBasis = isTablet ? `${100 / Math.min(gridColumns, 3) - 2}%` : '48%';
 
   return (
-    <Animated.View style={[styles.toolCardWrapper, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View style={[styles.toolCardWrapper, { opacity: fadeAnim, transform: [{ scale: scaleAnim }], flexBasis: cardBasis as unknown as number }]}>
       <TouchableOpacity
         style={styles.toolCard}
         onPress={() => router.push(tool.route as never)}

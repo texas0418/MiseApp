@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SectionList } from 'react-nat
 import { useRouter } from 'expo-router';
 import { Plus, Camera, Check, Clock, Eye, AlertCircle } from 'lucide-react-native';
 import { useProjects, useProjectShots } from '@/contexts/ProjectContext';
+import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { Shot, ShotStatus } from '@/types';
 
@@ -54,6 +55,7 @@ export default function ShotsScreen() {
   const { activeProject, activeProjectId } = useProjects();
   const shots = useProjectShots(activeProjectId);
   const router = useRouter();
+  const { isTablet, contentPadding } = useLayout();
 
   const sections = useMemo(() => {
     const grouped: Record<number, Shot[]> = {};
@@ -120,7 +122,7 @@ export default function ShotsScreen() {
             <Text style={styles.sectionCount}>{section.data.length} shot{section.data.length !== 1 ? 's' : ''}</Text>
           </View>
         )}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingHorizontal: contentPadding, maxWidth: isTablet ? 800 : undefined, alignSelf: isTablet ? 'center' as const : undefined, width: isTablet ? '100%' : undefined }]}
         showsVerticalScrollIndicator={false}
         stickySectionHeadersEnabled={false}
         ListEmptyComponent={
