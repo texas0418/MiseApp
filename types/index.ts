@@ -1,33 +1,27 @@
 // ============================================
-// ADD TO: types/index.ts (at the end of the file)
+// ADD TO END OF: types/index.ts
 // ============================================
 
-// Script Sides
-export type SidesStatus = 'upcoming' | 'shooting-today' | 'completed' | 'revised';
+// Cast Manager
+export type CastStatus = 'confirmed' | 'in-talks' | 'auditioned' | 'wishlist' | 'wrapped';
 
-export interface SideAnnotation {
-  id: string;
-  text: string;
-  type: 'blocking' | 'performance' | 'camera' | 'general';
-  timestamp: string;
-}
-
-export interface ScriptSide {
+export interface CastMember {
   id: string;
   projectId: string;
-  sceneNumber: number;
-  sceneHeader: string; // e.g. "INT. APARTMENT - NIGHT"
-  pageStart: string; // e.g. "12"
-  pageEnd: string; // e.g. "14A"
-  pageCount: number; // e.g. 2.5 (eighths)
-  shootDate: string;
-  status: SidesStatus;
-  synopsis: string;
-  castIds: string[]; // character names or cast IDs
-  linkedShotIds: string[]; // links to shot list
-  annotations: SideAnnotation[];
-  revisionColor?: string; // industry standard: white, blue, pink, yellow, green, goldenrod
-  revisionDate?: string;
-  notes: string;
+  actorName: string;
+  characterName: string;
+  characterDescription: string;
+  status: CastStatus;
+  headshot?: string;
+  email?: string;
+  phone?: string;
+  agentName?: string;
+  agentContact?: string;
+  scenes: number[]; // scene numbers this character appears in
+  shootDays: string[]; // dates (YYYY-MM-DD)
+  availability: string;
+  performanceNotes: string;
+  preferredTakes?: string; // notes on best takes for editor
+  costumeNotes?: string;
   createdAt: string;
 }

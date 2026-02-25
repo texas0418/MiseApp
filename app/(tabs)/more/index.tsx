@@ -5,7 +5,7 @@ import {
   FileText, MapPin, DollarSign, Clapperboard, BookOpen, BookOpenCheck,
   Aperture, Sparkles, Trophy, Palette, StickyNote,
   ClipboardList, User, Users, Layers, Image, CloudSun,
-  Share2, Move, Paintbrush, Clock
+  Share2, Move, Paintbrush, Clock, Drama
 } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
@@ -22,6 +22,7 @@ interface ToolItem {
 
 const PRE_PROD_TOOLS: ToolItem[] = [
   { icon: BookOpenCheck, label: 'Script Sides', subtitle: 'Daily shooting pages', route: '/script-sides', color: '#F59E0B' },
+  { icon: Drama, label: 'Cast', subtitle: 'Actors & characters', route: '/cast-manager', color: '#FB7185' },
   { icon: FileText, label: 'Script Breakdown', subtitle: 'Tag scenes & elements', route: '/script-breakdown', color: '#60A5FA' },
   { icon: MapPin, label: 'Locations', subtitle: 'Scout & manage sites', route: '/locations', color: '#4ADE80' },
   { icon: DollarSign, label: 'Budget', subtitle: 'Track spending', route: '/budget', color: '#FBBF24' },
