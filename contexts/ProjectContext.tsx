@@ -35,14 +35,18 @@ const STORAGE_KEYS = {
 };
 
 async function loadFromStorage<T>(key: string, fallback: T[]): Promise<T[]> {
+  const safeFallback = fallback ?? ([] as T[]);
   try {
     const stored = await AsyncStorage.getItem(key);
-    if (stored) return JSON.parse(stored);
-    await AsyncStorage.setItem(key, JSON.stringify(fallback));
-    return fallback;
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed : safeFallback;
+    }
+    await AsyncStorage.setItem(key, JSON.stringify(safeFallback));
+    return safeFallback;
   } catch (e) {
     console.log('Storage load error:', e);
-    return fallback;
+    return safeFallback;
   }
 }
 
@@ -211,5 +215,5 @@ export function useLocationWeatherData(locationId: string | null) { const { loca
 export function useProjectScriptSides(projectId: string | null) { const { scriptSides } = useProjects(); return scriptSides.filter(s => s.projectId === projectId).sort((a, b) => a.sceneNumber - b.sceneNumber); }
 export function useProjectCast(projectId: string | null) { const { castMembers } = useProjects(); return castMembers.filter(c => c.projectId === projectId).sort((a, b) => a.characterName.localeCompare(b.characterName)); }
 export function useProjectLookbook(projectId: string | null) { const { lookbookItems } = useProjects(); return lookbookItems.filter(l => l.projectId === projectId).sort((a, b) => a.sortOrder - b.sortOrder); }
-export function useProjectDirectorStatement(projectId: string | null) { const { directorStatements } = useProjects(); return directorStatements.find(s => s.projectId === projectId) ?? null; }
+export function useProjectDirectorStatement(projectId: string | null) { const { directorStatements } = useProjects(); return (directorStatements ?? []).find(s => s.projectId === projectId) ?? null; }
 export function useProjectSelects(projectId: string | null) { const { sceneSelects } = useProjects(); return sceneSelects.filter(s => s.projectId === projectId).sort((a, b) => a.sceneNumber - b.sceneNumber || a.shotNumber.localeCompare(b.shotNumber) || b.rating - a.rating); }
