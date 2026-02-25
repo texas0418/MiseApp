@@ -1,8 +1,3 @@
-// ============================================
-// THIS FILE GOES AT: app/_layout.tsx
-// (The ROOT layout — Stack navigator)
-// ============================================
-
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
@@ -66,6 +61,8 @@ function RootLayoutNav() {
       <Stack.Screen name="export-share" options={{ title: "Export & Share" }} />
       <Stack.Screen name="time-tracker" options={{ title: "Time Tracker" }} />
       <Stack.Screen name="new-time-entry" options={{ presentation: "modal", title: "New Time Entry" }} />
+      <Stack.Screen name="script-sides" options={{ title: "Script Sides" }} />
+      <Stack.Screen name="new-script-side" options={{ presentation: "modal", title: "New Side" }} />
     </Stack>
   );
 }

@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
-  FileText, MapPin, DollarSign, Clapperboard, BookOpen,
+  FileText, MapPin, DollarSign, Clapperboard, BookOpen, BookOpenCheck,
   Aperture, Sparkles, Trophy, Palette, StickyNote,
   ClipboardList, User, Users, Layers, Image, CloudSun,
   Share2, Move, Paintbrush, Clock
@@ -21,6 +21,7 @@ interface ToolItem {
 }
 
 const PRE_PROD_TOOLS: ToolItem[] = [
+  { icon: BookOpenCheck, label: 'Script Sides', subtitle: 'Daily shooting pages', route: '/script-sides', color: '#F59E0B' },
   { icon: FileText, label: 'Script Breakdown', subtitle: 'Tag scenes & elements', route: '/script-breakdown', color: '#60A5FA' },
   { icon: MapPin, label: 'Locations', subtitle: 'Scout & manage sites', route: '/locations', color: '#4ADE80' },
   { icon: DollarSign, label: 'Budget', subtitle: 'Track spending', route: '/budget', color: '#FBBF24' },
