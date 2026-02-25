@@ -1,83 +1,87 @@
-import { Tabs } from "expo-router";
-import { Clapperboard, Camera, CalendarDays, CircleDot, LayoutGrid } from "lucide-react-native";
-import React from "react";
-import { useLayout } from "@/utils/useLayout";
+// ============================================
+// THIS FILE GOES AT: app/_layout.tsx
+// (The ROOT layout — Stack navigator)
+// ============================================
+
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import React, { useEffect } from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { ProjectProvider } from "@/contexts/ProjectContext";
 import Colors from "@/constants/colors";
 
-export default function TabLayout() {
-  const { isTablet } = useLayout();
+SplashScreen.preventAutoHideAsync();
 
+const queryClient = new QueryClient();
+
+function RootLayoutNav() {
   return (
-    <Tabs
+    <Stack
       screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: Colors.accent.gold,
-        tabBarInactiveTintColor: Colors.text.tertiary,
-        tabBarStyle: {
-          backgroundColor: Colors.bg.secondary,
-          borderTopColor: Colors.border.subtle,
-          borderTopWidth: 0.5,
-          ...(isTablet ? {
-            // iPad: left sidebar-style tab bar
-            width: 88,
-            height: '100%',
-            borderTopWidth: 0,
-            borderRightWidth: 0.5,
-            borderRightColor: Colors.border.subtle,
-            paddingTop: 20,
-          } : {}),
-        },
-        tabBarLabelStyle: {
-          fontSize: isTablet ? 11 : 10,
-          fontWeight: '600' as const,
-          letterSpacing: 0.3,
-          ...(isTablet ? { marginTop: 4 } : {}),
-        },
-        tabBarIconStyle: isTablet ? { marginBottom: 0 } : {},
-        ...(isTablet ? { tabBarPosition: 'left' } : {}),
+        headerBackTitle: "Back",
+        headerStyle: { backgroundColor: Colors.bg.primary },
+        headerTintColor: Colors.accent.gold,
+        headerTitleStyle: { color: Colors.text.primary },
+        contentStyle: { backgroundColor: Colors.bg.primary },
       }}
     >
-      <Tabs.Screen
-        name="(home)"
-        options={{
-          title: "Projects",
-          tabBarIcon: ({ color, size }) => <Clapperboard color={color} size={isTablet ? size : size - 2} />,
-        }}
-      />
-      <Tabs.Screen
-        name="shots"
-        options={{
-          title: "Shots",
-          tabBarIcon: ({ color, size }) => <Camera color={color} size={isTablet ? size : size - 2} />,
-        }}
-      />
-      <Tabs.Screen
-        name="schedule"
-        options={{
-          title: "Schedule",
-          tabBarIcon: ({ color, size }) => <CalendarDays color={color} size={isTablet ? size : size - 2} />,
-        }}
-      />
-      <Tabs.Screen
-        name="onset"
-        options={{
-          title: "On Set",
-          tabBarIcon: ({ color, size }) => <CircleDot color={color} size={isTablet ? size : size - 2} />,
-        }}
-      />
-      <Tabs.Screen
-        name="more"
-        options={{
-          title: "Tools",
-          tabBarIcon: ({ color, size }) => <LayoutGrid color={color} size={isTablet ? size : size - 2} />,
-        }}
-      />
-      <Tabs.Screen
-        name="crew"
-        options={{
-          href: null,
-        }}
-      />
-    </Tabs>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="new-project" options={{ presentation: "modal", title: "New Project" }} />
+      <Stack.Screen name="new-shot" options={{ presentation: "modal", title: "New Shot" }} />
+      <Stack.Screen name="new-crew" options={{ presentation: "modal", title: "New Crew Member" }} />
+      <Stack.Screen name="new-schedule-day" options={{ presentation: "modal", title: "New Shoot Day" }} />
+      <Stack.Screen name="log-take" options={{ presentation: "modal", title: "Log Take" }} />
+      <Stack.Screen name="script-breakdown" options={{ title: "Script Breakdown" }} />
+      <Stack.Screen name="new-breakdown" options={{ presentation: "modal", title: "New Breakdown" }} />
+      <Stack.Screen name="locations" options={{ title: "Locations" }} />
+      <Stack.Screen name="new-location" options={{ presentation: "modal", title: "New Location" }} />
+      <Stack.Screen name="budget" options={{ title: "Budget" }} />
+      <Stack.Screen name="new-budget-item" options={{ presentation: "modal", title: "New Budget Item" }} />
+      <Stack.Screen name="digital-slate" options={{ title: "Digital Slate", headerStyle: { backgroundColor: '#000' } }} />
+      <Stack.Screen name="continuity" options={{ title: "Continuity" }} />
+      <Stack.Screen name="new-continuity" options={{ presentation: "modal", title: "New Continuity Note" }} />
+      <Stack.Screen name="lens-calculator" options={{ title: "Lens Calculator" }} />
+      <Stack.Screen name="vfx-tracker" options={{ title: "VFX Tracker" }} />
+      <Stack.Screen name="new-vfx" options={{ presentation: "modal", title: "New VFX Shot" }} />
+      <Stack.Screen name="festival-tracker" options={{ title: "Festivals" }} />
+      <Stack.Screen name="new-festival" options={{ presentation: "modal", title: "New Festival" }} />
+      <Stack.Screen name="production-notes" options={{ title: "Notes" }} />
+      <Stack.Screen name="new-note" options={{ presentation: "modal", title: "New Note" }} />
+      <Stack.Screen name="mood-boards" options={{ title: "Mood Boards" }} />
+      <Stack.Screen name="new-mood-item" options={{ presentation: "modal", title: "New Mood Item" }} />
+      <Stack.Screen name="call-sheets" options={{ title: "Call Sheets" }} />
+      <Stack.Screen name="crew-directory" options={{ title: "Crew Directory" }} />
+      <Stack.Screen name="portfolio" options={{ title: "Portfolio" }} />
+      <Stack.Screen name="frame-guides" options={{ title: "Frame Guides" }} />
+      <Stack.Screen name="shot-references" options={{ title: "Shot References" }} />
+      <Stack.Screen name="new-shot-reference" options={{ presentation: "modal", title: "New Reference" }} />
+      <Stack.Screen name="wrap-reports" options={{ title: "Wrap Reports" }} />
+      <Stack.Screen name="new-wrap-report" options={{ presentation: "modal", title: "New Wrap Report" }} />
+      <Stack.Screen name="location-weather" options={{ title: "Location Weather" }} />
+      <Stack.Screen name="blocking-notes" options={{ title: "Blocking & Rehearsal" }} />
+      <Stack.Screen name="new-blocking-note" options={{ presentation: "modal", title: "New Blocking Note" }} />
+      <Stack.Screen name="color-references" options={{ title: "Color & LUT Reference" }} />
+      <Stack.Screen name="new-color-reference" options={{ presentation: "modal", title: "New Color Reference" }} />
+      <Stack.Screen name="export-share" options={{ title: "Export & Share" }} />
+      <Stack.Screen name="time-tracker" options={{ title: "Time Tracker" }} />
+      <Stack.Screen name="new-time-entry" options={{ presentation: "modal", title: "New Time Entry" }} />
+    </Stack>
+  );
+}
+
+export default function RootLayout() {
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ProjectProvider>
+          <RootLayoutNav />
+        </ProjectProvider>
+      </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 }
