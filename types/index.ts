@@ -2,25 +2,21 @@
 // ADD TO END OF: types/index.ts
 // ============================================
 
-// Director's Lookbook
-export type LookbookSectionType = 'tone' | 'visual-style' | 'color-palette' | 'shot-style' | 'reference-film' | 'character-look' | 'world-building' | 'sound-music' | 'custom';
+// Scene Rating / Selects
+export type SelectRating = 1 | 2 | 3 | 4 | 5;
 
-export interface LookbookItem {
+export interface SceneSelect {
   id: string;
   projectId: string;
-  section: LookbookSectionType;
-  title: string;
-  description: string;
-  imageUrl?: string;
-  referenceFilm?: string;
-  colorHex?: string; // for palette entries
-  sortOrder: number;
+  sceneNumber: number;
+  shotNumber: string;
+  takeNumber: number;
+  rating: SelectRating;
+  isCircled: boolean;
+  isAlt: boolean; // alternate select
+  editorNote: string; // note for the editor
+  performanceNote: string; // director's note on performance
+  technicalNote: string; // focus, framing, exposure issues
+  timecode?: string; // in-point timecode
   createdAt: string;
-}
-
-export interface DirectorStatement {
-  id: string;
-  projectId: string;
-  text: string;
-  updatedAt: string;
 }

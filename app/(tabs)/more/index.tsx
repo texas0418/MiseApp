@@ -5,7 +5,7 @@ import {
   FileText, MapPin, DollarSign, Clapperboard, BookOpen, BookOpenCheck,
   Aperture, Sparkles, Trophy, Palette, StickyNote,
   ClipboardList, User, Users, Layers, Image, CloudSun,
-  Share2, Move, Paintbrush, Clock, Drama, ListChecks, BookHeart
+  Share2, Move, Paintbrush, Clock, Drama, ListChecks, BookHeart, Star as StarIcon
 } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
@@ -45,6 +45,7 @@ const ON_SET_TOOLS: ToolItem[] = [
 ];
 
 const POST_TOOLS: ToolItem[] = [
+  { icon: StarIcon, label: 'Selects', subtitle: 'Circle takes for editor', route: '/selects', color: '#F59E0B' },
   { icon: Sparkles, label: 'VFX Tracker', subtitle: 'Visual effects shots', route: '/vfx-tracker', color: '#818CF8' },
   { icon: Trophy, label: 'Festivals', subtitle: 'Submissions & deadlines', route: '/festival-tracker', color: '#F59E0B' },
   { icon: FileText, label: 'Wrap Reports', subtitle: 'Daily wrap summaries', route: '/wrap-reports', color: '#A78BFA' },
