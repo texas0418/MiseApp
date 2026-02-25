@@ -66,6 +66,8 @@ function RootLayoutNav() {
       <Stack.Screen name="cast-manager" options={{ title: "Cast" }} />
       <Stack.Screen name="new-cast-member" options={{ presentation: "modal", title: "New Cast Member" }} />
       <Stack.Screen name="shot-checklist" options={{ title: "Shot Checklist" }} />
+      <Stack.Screen name="lookbook" options={{ title: "Lookbook" }} />
+      <Stack.Screen name="new-lookbook-item" options={{ presentation: "modal", title: "New Lookbook Item" }} />
     </Stack>
   );
 }

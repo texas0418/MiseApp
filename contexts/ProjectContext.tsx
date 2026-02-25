@@ -2,8 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
-import { Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote, MoodBoardItem, DirectorCredit, ShotReference, WrapReport, LocationWeather, BlockingNote, ColorReference, TimeEntry, ScriptSide, CastMember } from '@/types';
-import { SAMPLE_PROJECTS, SAMPLE_SHOTS, SAMPLE_SCHEDULE, SAMPLE_CREW, SAMPLE_TAKES, SAMPLE_SCENE_BREAKDOWNS, SAMPLE_LOCATIONS, SAMPLE_BUDGET, SAMPLE_CONTINUITY, SAMPLE_VFX, SAMPLE_FESTIVALS, SAMPLE_NOTES, SAMPLE_MOOD_BOARD, SAMPLE_CREDITS, SAMPLE_SHOT_REFERENCES, SAMPLE_WRAP_REPORTS, SAMPLE_LOCATION_WEATHER, SAMPLE_BLOCKING_NOTES, SAMPLE_COLOR_REFERENCES, SAMPLE_TIME_ENTRIES, SAMPLE_SCRIPT_SIDES, SAMPLE_CAST } from '@/mocks/data';
+import { Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote, MoodBoardItem, DirectorCredit, ShotReference, WrapReport, LocationWeather, BlockingNote, ColorReference, TimeEntry, ScriptSide, CastMember, LookbookItem, DirectorStatement } from '@/types';
+import { SAMPLE_PROJECTS, SAMPLE_SHOTS, SAMPLE_SCHEDULE, SAMPLE_CREW, SAMPLE_TAKES, SAMPLE_SCENE_BREAKDOWNS, SAMPLE_LOCATIONS, SAMPLE_BUDGET, SAMPLE_CONTINUITY, SAMPLE_VFX, SAMPLE_FESTIVALS, SAMPLE_NOTES, SAMPLE_MOOD_BOARD, SAMPLE_CREDITS, SAMPLE_SHOT_REFERENCES, SAMPLE_WRAP_REPORTS, SAMPLE_LOCATION_WEATHER, SAMPLE_BLOCKING_NOTES, SAMPLE_COLOR_REFERENCES, SAMPLE_TIME_ENTRIES, SAMPLE_SCRIPT_SIDES, SAMPLE_CAST, SAMPLE_LOOKBOOK, SAMPLE_DIRECTOR_STATEMENT } from '@/mocks/data';
 
 const STORAGE_KEYS = {
   projects: 'mise_projects',
@@ -29,6 +29,8 @@ const STORAGE_KEYS = {
   timeEntries: 'mise_time_entries',
   scriptSides: 'mise_script_sides',
   cast: 'mise_cast',
+  lookbook: 'mise_lookbook',
+  directorStatement: 'mise_director_statement',
 };
 
 async function loadFromStorage<T>(key: string, fallback: T[]): Promise<T[]> {
@@ -108,6 +110,8 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
   const timeEntryStore = useEntityStore<TimeEntry>('timeEntries', STORAGE_KEYS.timeEntries, SAMPLE_TIME_ENTRIES);
   const scriptSideStore = useEntityStore<ScriptSide>('scriptSides', STORAGE_KEYS.scriptSides, SAMPLE_SCRIPT_SIDES);
   const castStore = useEntityStore<CastMember>('cast', STORAGE_KEYS.cast, SAMPLE_CAST);
+  const lookbookStore = useEntityStore<LookbookItem>('lookbook', STORAGE_KEYS.lookbook, SAMPLE_LOOKBOOK);
+  const directorStatementStore = useEntityStore<DirectorStatement>('directorStatement', STORAGE_KEYS.directorStatement, SAMPLE_DIRECTOR_STATEMENT);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEYS.activeProject).then((id) => {
@@ -142,6 +146,8 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
   const timeEntries = timeEntryStore.items;
   const scriptSides = scriptSideStore.items;
   const castMembers = castStore.items;
+  const lookbookItems = lookbookStore.items;
+  const directorStatements = directorStatementStore.items;
 
   const activeProject = projects.find(p => p.id === activeProjectId) ?? null;
   const isLoading = projectStore.isLoading || shotStore.isLoading || scheduleStore.isLoading || crewStore.isLoading || takeStore.isLoading;
@@ -151,7 +157,7 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
     sceneBreakdowns, locations, budgetItems, continuityNotes,
     vfxShots, festivals, productionNotes, moodBoardItems, directorCredits,
     shotReferences, wrapReports, locationWeather, blockingNotes, colorReferences, timeEntries,
-    scriptSides, castMembers,
+    scriptSides, castMembers, lookbookItems, directorStatements,
     activeProject, activeProjectId, isLoading,
     selectProject,
     addProject: projectStore.add, updateProject: projectStore.update, deleteProject: projectStore.remove,
@@ -176,6 +182,8 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
     addTimeEntry: timeEntryStore.add, updateTimeEntry: timeEntryStore.update, deleteTimeEntry: timeEntryStore.remove,
     addScriptSide: scriptSideStore.add, updateScriptSide: scriptSideStore.update, deleteScriptSide: scriptSideStore.remove,
     addCastMember: castStore.add, updateCastMember: castStore.update, deleteCastMember: castStore.remove,
+    addLookbookItem: lookbookStore.add, updateLookbookItem: lookbookStore.update, deleteLookbookItem: lookbookStore.remove,
+    addDirectorStatement: directorStatementStore.add, updateDirectorStatement: directorStatementStore.update, deleteDirectorStatement: directorStatementStore.remove,
   };
 });
 
@@ -272,4 +280,14 @@ export function useProjectScriptSides(projectId: string | null) {
 export function useProjectCast(projectId: string | null) {
   const { castMembers } = useProjects();
   return castMembers.filter(c => c.projectId === projectId).sort((a, b) => a.characterName.localeCompare(b.characterName));
+}
+
+export function useProjectLookbook(projectId: string | null) {
+  const { lookbookItems } = useProjects();
+  return lookbookItems.filter(l => l.projectId === projectId).sort((a, b) => a.sortOrder - b.sortOrder);
+}
+
+export function useProjectDirectorStatement(projectId: string | null) {
+  const { directorStatements } = useProjects();
+  return directorStatements.find(s => s.projectId === projectId) ?? null;
 }
