@@ -5,7 +5,7 @@ import {
   FileText, MapPin, DollarSign, Clapperboard, BookOpen, BookOpenCheck,
   Aperture, Sparkles, Trophy, Palette, StickyNote,
   ClipboardList, User, Users, Layers, Image, CloudSun,
-  Share2, Move, Paintbrush, Clock, Drama
+  Share2, Move, Paintbrush, Clock, Drama, ListChecks
 } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
@@ -36,6 +36,7 @@ const PRE_PROD_TOOLS: ToolItem[] = [
 ];
 
 const ON_SET_TOOLS: ToolItem[] = [
+  { icon: ListChecks, label: 'Shot Checklist', subtitle: 'Daily shot progress', route: '/shot-checklist', color: '#4ADE80' },
   { icon: Clapperboard, label: 'Digital Slate', subtitle: 'Clapperboard', route: '/digital-slate', color: '#F87171' },
   { icon: BookOpen, label: 'Continuity', subtitle: 'Script supervisor notes', route: '/continuity', color: '#34D399' },
   { icon: StickyNote, label: 'Notes', subtitle: 'Production notes', route: '/production-notes', color: '#FCD34D' },

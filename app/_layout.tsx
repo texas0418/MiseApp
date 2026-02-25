@@ -65,6 +65,7 @@ function RootLayoutNav() {
       <Stack.Screen name="new-script-side" options={{ presentation: "modal", title: "New Side" }} />
       <Stack.Screen name="cast-manager" options={{ title: "Cast" }} />
       <Stack.Screen name="new-cast-member" options={{ presentation: "modal", title: "New Cast Member" }} />
+      <Stack.Screen name="shot-checklist" options={{ title: "Shot Checklist" }} />
     </Stack>
   );
 }
