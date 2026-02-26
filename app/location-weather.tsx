@@ -46,6 +46,31 @@ function calcGoldenHour(sunriseISO: string, sunsetISO: string): { am: string; pm
   }
 }
 
+// Known coordinates for sample locations — used as fallback when location data
+// lacks lat/long and the geocoding API can't resolve film-specific location names
+const KNOWN_COORDINATES: Record<string, { lat: number; lon: number }> = {
+  'point reyes lighthouse': { lat: 37.9963, lon: -123.0247 },
+  'point reyes': { lat: 37.9963, lon: -123.0247 },
+  'point reyes national seashore': { lat: 37.9963, lon: -123.0247 },
+  'stage b - lighthouse interior': { lat: 37.9735, lon: -122.5311 },
+  'stage b': { lat: 37.9735, lon: -122.5311 },
+  'san rafael': { lat: 37.9735, lon: -122.5311 },
+};
+
+function lookupKnownCoordinates(name: string, address: string): { lat: number; lon: number } | null {
+  const nameKey = name.toLowerCase().trim();
+  if (KNOWN_COORDINATES[nameKey]) return KNOWN_COORDINATES[nameKey];
+
+  const addrKey = address.toLowerCase().trim();
+  if (KNOWN_COORDINATES[addrKey]) return KNOWN_COORDINATES[addrKey];
+
+  // Partial match — check if any known key is contained in name or address
+  for (const [key, coords] of Object.entries(KNOWN_COORDINATES)) {
+    if (nameKey.includes(key) || addrKey.includes(key)) return coords;
+  }
+  return null;
+}
+
 async function geocodeAddress(address: string): Promise<{ lat: number; lon: number; name: string } | null> {
   try {
     const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(address)}&count=1&language=en&format=json`);
@@ -65,23 +90,19 @@ async function fetchForecast(lat: number, lon: number): Promise<DayForecast[]> {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.daily) return [];
-
   const days: DayForecast[] = [];
   for (let i = 0; i < data.daily.time.length; i++) {
     const sunriseISO = data.daily.sunrise[i];
     const sunsetISO = data.daily.sunset[i];
     const golden = calcGoldenHour(sunriseISO, sunsetISO);
-
     const hourlyHumidity = data.hourly?.relative_humidity_2m?.slice(i * 24, (i + 1) * 24) ?? [];
     const avgHumidity = hourlyHumidity.length > 0
       ? Math.round(hourlyHumidity.reduce((s: number, v: number) => s + v, 0) / hourlyHumidity.length)
       : 0;
-
     const fmtSun = (iso: string) => {
       try { return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
       catch { return iso; }
     };
-
     days.push({
       date: data.daily.time[i],
       tempHigh: Math.round(data.daily.temperature_2m_max[i]),
@@ -116,30 +137,25 @@ function ForecastCard({ day }: { day: DayForecast }) {
           <Text style={[styles.condText, { color: config.color }]}>{config.label}</Text>
         </View>
       </View>
-
       <View style={styles.tempRow}>
         <Text style={styles.tempHigh}>{day.tempHigh}°F</Text>
         <Text style={styles.tempLow}>{day.tempLow}°F</Text>
       </View>
-
       <View style={styles.detailGrid}>
         <View style={styles.detailItem}><Wind color={Colors.text.tertiary} size={14} /><Text style={styles.detailText}>{day.windSpeed} mph</Text></View>
         <View style={styles.detailItem}><Droplets color={Colors.text.tertiary} size={14} /><Text style={styles.detailText}>{day.humidity}%</Text></View>
         <View style={styles.detailItem}><CloudRain color={Colors.text.tertiary} size={14} /><Text style={styles.detailText}>{day.precipChance}% rain</Text></View>
         <View style={styles.detailItem}><Sun color={Colors.text.tertiary} size={14} /><Text style={styles.detailText}>UV {day.uvIndex}</Text></View>
       </View>
-
       <View style={styles.sunRow}>
         <View style={styles.sunItem}><Sunrise color={Colors.accent.gold} size={14} /><Text style={styles.sunText}>{day.sunrise}</Text></View>
         <View style={styles.sunItem}><Sunset color={Colors.accent.goldDim} size={14} /><Text style={styles.sunText}>{day.sunset}</Text></View>
       </View>
-
       <View style={styles.goldenRow}>
         <Text style={styles.goldenLabel}>🌅 Golden Hour</Text>
         <Text style={styles.goldenText}>AM: {day.goldenHourAM}</Text>
         <Text style={styles.goldenText}>PM: {day.goldenHourPM}</Text>
       </View>
-
       {day.precipChance >= 40 && (
         <View style={styles.alertRow}>
           <AlertCircle color={Colors.status.warning} size={14} />
@@ -163,24 +179,52 @@ interface ForecastState {
   geocodedName: string | null;
 }
 
-function LocationWeatherSection({ locationName, address }: { locationName: string; address: string }) {
+function LocationWeatherSection({ locationName, address, latitude, longitude }: {
+  locationName: string;
+  address: string;
+  latitude?: number;
+  longitude?: number;
+}) {
   const [state, setState] = useState<ForecastState>({ loading: true, error: null, forecast: [], geocodedName: null });
 
   const load = useCallback(async () => {
     setState(s => ({ ...s, loading: true, error: null }));
     try {
-      let geo = await geocodeAddress(address);
-      if (!geo) geo = await geocodeAddress(locationName);
-      if (!geo) {
-        setState({ loading: false, error: 'Could not find coordinates for this location', forecast: [], geocodedName: null });
-        return;
+      let lat: number | undefined = latitude;
+      let lon: number | undefined = longitude;
+      let resolvedName: string | null = null;
+
+      // PRIORITY 1: Use coordinates directly from location data
+      if (lat != null && lon != null && !isNaN(lat) && !isNaN(lon)) {
+        resolvedName = locationName;
+      } else {
+        // PRIORITY 2: Check known coordinates lookup table
+        const known = lookupKnownCoordinates(locationName, address);
+        if (known) {
+          lat = known.lat;
+          lon = known.lon;
+          resolvedName = locationName;
+        } else {
+          // PRIORITY 3: Try geocoding the address
+          let geo = await geocodeAddress(address);
+          // PRIORITY 4: Try geocoding just the location name
+          if (!geo) geo = await geocodeAddress(locationName);
+          if (!geo) {
+            setState({ loading: false, error: 'Could not find coordinates for this location', forecast: [], geocodedName: null });
+            return;
+          }
+          lat = geo.lat;
+          lon = geo.lon;
+          resolvedName = geo.name;
+        }
       }
-      const forecast = await fetchForecast(geo.lat, geo.lon);
-      setState({ loading: false, error: null, forecast, geocodedName: geo.name });
+
+      const forecast = await fetchForecast(lat!, lon!);
+      setState({ loading: false, error: null, forecast, geocodedName: resolvedName });
     } catch {
       setState({ loading: false, error: 'Failed to fetch weather data', forecast: [], geocodedName: null });
     }
-  }, [address, locationName]);
+  }, [address, locationName, latitude, longitude]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -198,7 +242,6 @@ function LocationWeatherSection({ locationName, address }: { locationName: strin
         </View>
         <TouchableOpacity onPress={load} style={styles.refreshBtn}><RefreshCw color={Colors.accent.gold} size={16} /></TouchableOpacity>
       </View>
-
       {state.loading && (
         <View style={styles.loadingBox}><ActivityIndicator color={Colors.accent.gold} /><Text style={styles.loadingText}>Fetching forecast...</Text></View>
       )}
@@ -222,7 +265,15 @@ export default function LocationWeatherScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Stack.Screen options={{ title: 'Location Weather' }} />
       <View style={styles.poweredBy}><Text style={styles.poweredByText}>Live 7-day forecast • Powered by Open-Meteo.com</Text></View>
-      {projectLocations.map(loc => <LocationWeatherSection key={loc.id} locationName={loc.name} address={loc.address} />)}
+      {projectLocations.map(loc => (
+        <LocationWeatherSection
+          key={loc.id}
+          locationName={loc.name}
+          address={loc.address}
+          latitude={(loc as any).latitude}
+          longitude={(loc as any).longitude}
+        />
+      ))}
       {projectLocations.length === 0 && (
         <View style={styles.emptyInner}><Sun color={Colors.text.tertiary} size={48} /><Text style={styles.emptyTitle}>No locations yet</Text><Text style={styles.emptySub}>Add locations in the Locations tool to see weather forecasts</Text></View>
       )}
