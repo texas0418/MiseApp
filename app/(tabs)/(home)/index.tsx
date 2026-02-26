@@ -1,8 +1,9 @@
-import React, { useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Animated, ActivityIndicator } from 'react-native';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Animated, ActivityIndicator, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Plus, Film, ChevronRight } from 'lucide-react-native';
+import { Plus, Film, ChevronRight, Trash2 } from 'lucide-react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
@@ -24,9 +25,10 @@ const STATUS_COLORS: Record<ProjectStatus, string> = {
   'completed': Colors.text.tertiary,
 };
 
-function ProjectCard({ project, index, onPress }: { project: Project; index: number; onPress: () => void }) {
+function ProjectCard({ project, index, onPress, onDelete }: { project: Project; index: number; onPress: () => void; onDelete: () => void }) {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const slideAnim = useRef(new Animated.Value(30)).current;
+  const swipeableRef = useRef<Swipeable>(null);
 
   useEffect(() => {
     Animated.parallel([
@@ -47,51 +49,87 @@ function ProjectCard({ project, index, onPress }: { project: Project; index: num
 
   const statusColor = STATUS_COLORS[project.status];
 
+  const renderRightActions = () => (
+    <TouchableOpacity
+      style={styles.deleteAction}
+      onPress={() => {
+        swipeableRef.current?.close();
+        onDelete();
+      }}
+      activeOpacity={0.7}
+    >
+      <Trash2 color="#fff" size={20} />
+      <Text style={styles.deleteActionText}>Delete</Text>
+    </TouchableOpacity>
+  );
+
   return (
     <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
-      <TouchableOpacity
-        style={styles.projectCard}
-        onPress={onPress}
-        activeOpacity={0.7}
-        testID={`project-card-${project.id}`}
-      >
-        {project.imageUrl ? (
-          <Image source={{ uri: project.imageUrl }} style={styles.projectImage} contentFit="cover" />
-        ) : (
-          <View style={[styles.projectImage, styles.projectImagePlaceholder]}>
-            <Film color={Colors.text.tertiary} size={32} />
-          </View>
-        )}
-        <View style={styles.projectImageOverlay} />
-        <View style={styles.projectContent}>
-          <View style={styles.projectHeader}>
-            <View style={[styles.statusBadge, { backgroundColor: statusColor + '22', borderColor: statusColor + '44' }]}>
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-              <Text style={[styles.statusText, { color: statusColor }]}>{STATUS_LABELS[project.status]}</Text>
+      <Swipeable ref={swipeableRef} renderRightActions={renderRightActions} overshootRight={false}>
+        <TouchableOpacity
+          style={styles.projectCard}
+          onPress={onPress}
+          activeOpacity={0.7}
+          testID={`project-card-${project.id}`}
+        >
+          {project.imageUrl ? (
+            <Image
+              source={{ uri: project.imageUrl }}
+              style={styles.projectImage}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={[styles.projectImage, styles.projectImagePlaceholder]}>
+              <Film color={Colors.text.tertiary} size={32} />
             </View>
-            <Text style={styles.projectFormat}>{project.format}</Text>
+          )}
+          <View style={styles.projectImageOverlay} />
+          <View style={styles.projectContent}>
+            <View style={styles.projectHeader}>
+              <View style={[styles.statusBadge, { backgroundColor: statusColor + '22', borderColor: statusColor + '44' }]}>
+                <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+                <Text style={[styles.statusText, { color: statusColor }]}>{STATUS_LABELS[project.status]}</Text>
+              </View>
+              <Text style={styles.projectFormat}>{project.format}</Text>
+            </View>
+            <Text style={styles.projectTitle}>{project.title}</Text>
+            <Text style={styles.projectLogline} numberOfLines={2}>{project.logline}</Text>
+            <View style={styles.projectFooter}>
+              <Text style={styles.projectGenre}>{project.genre}</Text>
+              <ChevronRight color={Colors.text.tertiary} size={16} />
+            </View>
           </View>
-          <Text style={styles.projectTitle}>{project.title}</Text>
-          <Text style={styles.projectLogline} numberOfLines={2}>{project.logline}</Text>
-          <View style={styles.projectFooter}>
-            <Text style={styles.projectGenre}>{project.genre}</Text>
-            <ChevronRight color={Colors.text.tertiary} size={16} />
-          </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Swipeable>
     </Animated.View>
   );
 }
 
 export default function ProjectsScreen() {
-  const { projects, activeProjectId, selectProject, isLoading } = useProjects();
+  const { projects, activeProjectId, selectProject, deleteProject, isLoading } = useProjects();
   const router = useRouter();
   const { isTablet, gridColumns, contentPadding } = useLayout();
   const columns = isTablet ? Math.min(gridColumns, 2) : 1;
 
   const handleProjectPress = useCallback((project: Project) => {
     selectProject(project.id);
-  }, [selectProject]);
+    router.push({ pathname: '/project-detail', params: { id: project.id } } as never);
+  }, [selectProject, router]);
+
+  const handleDeleteProject = useCallback((project: Project) => {
+    Alert.alert(
+      'Delete Project',
+      `Are you sure you want to delete "${project.title}"? This cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteProject(project.id),
+        },
+      ]
+    );
+  }, [deleteProject]);
 
   const renderProject = useCallback(({ item, index }: { item: Project; index: number }) => (
     <View style={isTablet ? { flex: 1 / columns, padding: 8 } : {}}>
@@ -99,9 +137,10 @@ export default function ProjectsScreen() {
         project={item}
         index={index}
         onPress={() => handleProjectPress(item)}
+        onDelete={() => handleDeleteProject(item)}
       />
     </View>
-  ), [handleProjectPress, isTablet, columns]);
+  ), [handleProjectPress, handleDeleteProject, isTablet, columns]);
 
   if (isLoading) {
     return (
@@ -121,6 +160,7 @@ export default function ProjectsScreen() {
           </Text>
         </View>
       )}
+
       <FlatList
         data={projects}
         keyExtractor={item => item.id}
@@ -143,6 +183,7 @@ export default function ProjectsScreen() {
           </View>
         }
       />
+
       <TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/new-project' as never)}
@@ -290,6 +331,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: Colors.accent.goldLight,
     fontWeight: '600' as const,
+  },
+  deleteAction: {
+    backgroundColor: Colors.status.error,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 16,
+    marginBottom: 16,
+    marginLeft: 8,
+  },
+  deleteActionText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '600' as const,
+    marginTop: 4,
   },
   emptyContainer: {
     alignItems: 'center',
