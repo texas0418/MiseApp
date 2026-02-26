@@ -78,45 +78,61 @@ export const SAMPLE_SCENE_BREAKDOWNS: SceneBreakdown[] = [
     intExt: 'EXT', timeOfDay: 'dusk', location: 'Point Reyes Lighthouse',
     cast: ['Elena Voss'], extras: '2 fishermen in background',
     props: ['Lantern', 'Rope coil', 'Journal'], wardrobe: ['Weathered overcoat', 'Wool scarf'],
-    specialEquipment: ['Crane', 'Wind machine'], notes: 'Need golden hour. Backup: magic hour composite.',
-    pageCount: '2 3/8',
+    specialEquipment: ['Crane', 'Wind machine'],
+    notes: 'Need golden hour. Backup: magic hour composite.', pageCount: '2 3/8',
   },
   {
     id: 'sb2', projectId: '1', sceneNumber: 2, sceneName: 'Climbing the Tower',
     intExt: 'INT', timeOfDay: 'night', location: 'Lighthouse Interior (Stage B)',
     cast: ['Elena Voss'], extras: '',
     props: ['Oil lamp', 'Worn key ring'], wardrobe: ['Same overcoat from Sc.1'],
-    specialEquipment: ['Steadicam rig', 'Practical window lights'], notes: 'Spiral staircase. Safety harness required.',
-    pageCount: '1 5/8',
+    specialEquipment: ['Steadicam rig', 'Practical window lights'],
+    notes: 'Spiral staircase. Safety harness required.', pageCount: '1 5/8',
   },
   {
     id: 'sb3', projectId: '1', sceneNumber: 3, sceneName: 'The View From Above',
     intExt: 'INT/EXT', timeOfDay: 'night', location: 'Lighthouse Top / Green Screen',
     cast: ['Elena Voss'], extras: '',
     props: ['Binoculars', 'Light mechanism controls'], wardrobe: ['Same overcoat'],
-    specialEquipment: ['Green screen panels', 'LED volume'], notes: 'VFX plate for sea darkness. Shoot plate separately day 1.',
-    pageCount: '3 1/8',
+    specialEquipment: ['Green screen panels', 'LED volume'],
+    notes: 'VFX plate for sea darkness. Shoot plate separately day 1.', pageCount: '3 1/8',
   },
 ];
 
 export const SAMPLE_LOCATIONS: LocationScout[] = [
   {
-    id: 'loc1', projectId: '1', name: 'Point Reyes Lighthouse',
+    id: 'loc1', projectId: '1',
+    name: 'Point Reyes Lighthouse',
     address: 'Point Reyes National Seashore, CA 94956',
-    contactName: 'Park Ranger Davis', contactPhone: '+1 555-0201',
-    permitRequired: true, permitStatus: 'Approved',
+    contactName: 'Park Ranger Davis',
+    contactPhone: '+1 555-0201',
+    permitRequired: true,
+    permitStatus: 'Approved',
     parkingNotes: 'Crew parking 0.3mi from set. Shuttle needed.',
-    powerAvailable: false, notes: 'Generator required. No drone zone. Check tide schedule.',
-    rating: 5, photoUrls: [], scenes: ['1', '5', '8'],
+    powerAvailable: false,
+    notes: 'Generator required. No drone zone. Check tide schedule.',
+    rating: 5,
+    photoUrls: [],
+    scenes: ['1', '5', '8'],
+    latitude: 37.9963,
+    longitude: -123.0247,
   },
   {
-    id: 'loc2', projectId: '1', name: 'Stage B - Lighthouse Interior',
+    id: 'loc2', projectId: '1',
+    name: 'Stage B - Lighthouse Interior',
     address: '450 Industrial Blvd, San Rafael, CA',
-    contactName: 'Mike from Stage Mgmt', contactPhone: '+1 555-0202',
-    permitRequired: false, permitStatus: 'N/A',
+    contactName: 'Mike from Stage Mgmt',
+    contactPhone: '+1 555-0202',
+    permitRequired: false,
+    permitStatus: 'N/A',
     parkingNotes: 'Full lot available. Load-in dock on east side.',
-    powerAvailable: true, notes: 'Build spiral staircase set piece. 2 day build.',
-    rating: 4, photoUrls: [], scenes: ['2', '3'],
+    powerAvailable: true,
+    notes: 'Build spiral staircase set piece. 2 day build.',
+    rating: 4,
+    photoUrls: [],
+    scenes: ['2', '3'],
+    latitude: 37.9735,
+    longitude: -122.5311,
   },
 ];
 
@@ -217,9 +233,9 @@ export const PROJECT_STATUSES: { label: string; value: string }[] = [
 ];
 
 export const GENRES: string[] = [
-  'Drama', 'Thriller', 'Sci-Fi', 'Horror', 'Comedy',
-  'Romance', 'Documentary', 'Animation', 'Action', 'Experimental',
-  'Sci-Fi Drama', 'Dark Comedy', 'Musical', 'Mystery', 'Western',
+  'Drama', 'Thriller', 'Sci-Fi', 'Horror', 'Comedy', 'Romance',
+  'Documentary', 'Animation', 'Action', 'Experimental', 'Sci-Fi Drama',
+  'Dark Comedy', 'Musical', 'Mystery', 'Western',
 ];
 
 export const BUDGET_CATEGORIES: { label: string; value: string }[] = [
@@ -246,7 +262,16 @@ export const SAMPLE_SHOT_REFERENCES: ShotReference[] = [
 ];
 
 export const SAMPLE_WRAP_REPORTS: WrapReport[] = [
-  { id: 'wr1', projectId: '1', scheduleDayId: 'd1', dayNumber: 1, date: '2026-03-15', callTime: '5:30 AM', actualWrap: '6:30 PM', scheduledWrap: '7:00 PM', scenesScheduled: 'Sc. 1, 5, 8', scenesCompleted: 'Sc. 1, 5', shotsPlanned: 8, shotsCompleted: 6, totalTakes: 18, circledTakes: 8, ngTakes: 3, pagesScheduled: '5 2/8', pagesCompleted: '3 6/8', overtimeMinutes: 0, notes: 'Wrapped 30min early. Sc.8 pushed to day 3 due to tide. Great golden hour footage.', safetyIncidents: 'None', weatherConditions: 'Clear, 62°F, light wind', createdAt: '2026-03-15T19:00:00' },
+  {
+    id: 'wr1', projectId: '1', scheduleDayId: 'd1', dayNumber: 1, date: '2026-03-15',
+    callTime: '5:30 AM', actualWrap: '6:30 PM', scheduledWrap: '7:00 PM',
+    scenesScheduled: 'Sc. 1, 5, 8', scenesCompleted: 'Sc. 1, 5',
+    shotsPlanned: 8, shotsCompleted: 6, totalTakes: 18, circledTakes: 8, ngTakes: 3,
+    pagesScheduled: '5 2/8', pagesCompleted: '3 6/8', overtimeMinutes: 0,
+    notes: 'Wrapped 30min early. Sc.8 pushed to day 3 due to tide. Great golden hour footage.',
+    safetyIncidents: 'None', weatherConditions: 'Clear, 62°F, light wind',
+    createdAt: '2026-03-15T19:00:00'
+  },
 ];
 
 export const SAMPLE_LOCATION_WEATHER: LocationWeather[] = [
@@ -256,8 +281,24 @@ export const SAMPLE_LOCATION_WEATHER: LocationWeather[] = [
 ];
 
 export const SAMPLE_BLOCKING_NOTES: BlockingNote[] = [
-  { id: 'bn1', projectId: '1', sceneNumber: 1, title: 'Keeper approaches lighthouse', description: 'Elena enters frame left, walks toward lighthouse door. Pauses at step 3 to look back at sea.', actorPositions: 'Start: frame left edge, 20ft from door. End: at door threshold.', cameraPosition: 'Camera A: wide on dolly track, parallel. Camera B: low angle at door.', movementNotes: 'Slow, deliberate pace. Wind pushes her forward. She resists slightly.', notes: 'Key beat: the pause and look back. This is where she decides.', createdAt: '2026-03-10T14:00:00' },
-  { id: 'bn2', projectId: '1', sceneNumber: 2, title: 'Spiral staircase climb', description: 'Steadicam follows Elena up 3 flights. She traces the wall with her right hand.', actorPositions: 'Start: bottom of stairs. End: landing before light room.', cameraPosition: 'Steadicam behind, slightly below. Tight on her back/shoulder.', movementNotes: 'Speed up gradually. By flight 3 she is almost running.', notes: 'Rehearse with stunt coord for safety on narrow stairs.', createdAt: '2026-03-10T15:00:00' },
+  {
+    id: 'bn1', projectId: '1', sceneNumber: 1, title: 'Keeper approaches lighthouse',
+    description: 'Elena enters frame left, walks toward lighthouse door. Pauses at step 3 to look back at sea.',
+    actorPositions: 'Start: frame left edge, 20ft from door. End: at door threshold.',
+    cameraPosition: 'Camera A: wide on dolly track, parallel. Camera B: low angle at door.',
+    movementNotes: 'Slow, deliberate pace. Wind pushes her forward. She resists slightly.',
+    notes: 'Key beat: the pause and look back. This is where she decides.',
+    createdAt: '2026-03-10T14:00:00'
+  },
+  {
+    id: 'bn2', projectId: '1', sceneNumber: 2, title: 'Spiral staircase climb',
+    description: 'Steadicam follows Elena up 3 flights. She traces the wall with her right hand.',
+    actorPositions: 'Start: bottom of stairs. End: landing before light room.',
+    cameraPosition: 'Steadicam behind, slightly below. Tight on her back/shoulder.',
+    movementNotes: 'Speed up gradually. By flight 3 she is almost running.',
+    notes: 'Rehearse with stunt coord for safety on narrow stairs.',
+    createdAt: '2026-03-10T15:00:00'
+  },
 ];
 
 export const SAMPLE_COLOR_REFERENCES: ColorReference[] = [
@@ -300,10 +341,13 @@ export const LENS_DATA = [
 ];
 
 // === SCRIPT SIDES ===
+
 export const SAMPLE_SCRIPT_SIDES: ScriptSide[] = [
   {
-    id: 'side-1', projectId: '1', sceneNumber: 1, sceneHeader: 'EXT. DESERT HIGHWAY - DAWN',
-    pageStart: '1', pageEnd: '3', pageCount: 2.625, shootDate: '2025-03-15', status: 'completed',
+    id: 'side-1', projectId: '1', sceneNumber: 1,
+    sceneHeader: 'EXT. DESERT HIGHWAY - DAWN',
+    pageStart: '1', pageEnd: '3', pageCount: 2.625,
+    shootDate: '2025-03-15', status: 'completed',
     synopsis: 'Marcus drives alone through the desert at dawn. Voiceover establishes his inner monologue about leaving everything behind.',
     castIds: ['Marcus'], linkedShotIds: ['1', '2'],
     annotations: [
@@ -311,11 +355,14 @@ export const SAMPLE_SCRIPT_SIDES: ScriptSide[] = [
       { id: 'ann-2', text: 'Marcus should show exhaustion but not defeat', type: 'performance', timestamp: '2025-03-15T07:15:00Z' },
     ],
     revisionColor: 'blue', revisionDate: '2025-03-10',
-    notes: 'Golden hour critical — must shoot within first 30 min of sunrise', createdAt: '2025-03-01T10:00:00Z',
+    notes: 'Golden hour critical — must shoot within first 30 min of sunrise',
+    createdAt: '2025-03-01T10:00:00Z',
   },
   {
-    id: 'side-2', projectId: '1', sceneNumber: 5, sceneHeader: "INT. ELENA'S APARTMENT - NIGHT",
-    pageStart: '12', pageEnd: '14A', pageCount: 3.0, shootDate: '2025-03-17', status: 'shooting-today',
+    id: 'side-2', projectId: '1', sceneNumber: 5,
+    sceneHeader: "INT. ELENA'S APARTMENT - NIGHT",
+    pageStart: '12', pageEnd: '14A', pageCount: 3.0,
+    shootDate: '2025-03-17', status: 'shooting-today',
     synopsis: 'Elena receives the phone call about Marcus. She tries to remain composed but breaks down after hanging up.',
     castIds: ['Elena', 'Marcus (V.O.)'], linkedShotIds: ['3'],
     annotations: [
@@ -323,80 +370,109 @@ export const SAMPLE_SCRIPT_SIDES: ScriptSide[] = [
       { id: 'ann-5', text: 'Elena moves to window after the call — blocking matches Scene 22', type: 'blocking', timestamp: '2025-03-17T09:10:00Z' },
     ],
     revisionColor: 'pink', revisionDate: '2025-03-16',
-    notes: 'Revised dialogue on page 13', createdAt: '2025-03-01T10:00:00Z',
+    notes: 'Revised dialogue on page 13',
+    createdAt: '2025-03-01T10:00:00Z',
   },
   {
-    id: 'side-3', projectId: '1', sceneNumber: 12, sceneHeader: 'EXT. ROOFTOP - MAGIC HOUR',
-    pageStart: '28', pageEnd: '30', pageCount: 2.25, shootDate: '2025-03-20', status: 'upcoming',
+    id: 'side-3', projectId: '1', sceneNumber: 12,
+    sceneHeader: 'EXT. ROOFTOP - MAGIC HOUR',
+    pageStart: '28', pageEnd: '30', pageCount: 2.25,
+    shootDate: '2025-03-20', status: 'upcoming',
     synopsis: 'Marcus and Elena meet on the rooftop for the first time since the incident.',
-    castIds: ['Marcus', 'Elena'], linkedShotIds: [], annotations: [],
-    notes: 'Need to scout rooftop access by 3/18.', createdAt: '2025-03-01T10:00:00Z',
+    castIds: ['Marcus', 'Elena'], linkedShotIds: [],
+    annotations: [],
+    notes: 'Need to scout rooftop access by 3/18.',
+    createdAt: '2025-03-01T10:00:00Z',
   },
 ];
 
 // === CAST ===
+
 export const SAMPLE_CAST: CastMember[] = [
   {
-    id: 'cast-1', projectId: '1', actorName: 'Daniel Reeves', characterName: 'Marcus',
+    id: 'cast-1', projectId: '1',
+    actorName: 'Daniel Reeves', characterName: 'Marcus',
     characterDescription: 'A man in his late 30s running from a past he can\'t outrun. Quiet intensity.',
-    status: 'confirmed', headshot: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300',
+    status: 'confirmed',
+    headshot: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300',
     email: 'daniel.reeves@talent.com', phone: '(310) 555-0142',
     agentName: 'Lisa Park', agentContact: 'lpark@caatalent.com',
-    scenes: [1, 5, 8, 12, 15, 18, 22], shootDays: ['2025-03-15', '2025-03-17', '2025-03-16', '2025-03-20'],
-    availability: 'Full availability March 10–30.', performanceNotes: 'Strongest in understated moments. Best takes usually come after take 3.',
-    preferredTakes: 'Sc.1: Take 4. Sc.5: Take 2.', costumeNotes: 'Worn leather jacket, faded jeans, desert boots.',
+    scenes: [1, 5, 8, 12, 15, 18, 22],
+    shootDays: ['2025-03-15', '2025-03-17', '2025-03-16', '2025-03-20'],
+    availability: 'Full availability March 10–30.',
+    performanceNotes: 'Strongest in understated moments. Best takes usually come after take 3.',
+    preferredTakes: 'Sc.1: Take 4. Sc.5: Take 2.',
+    costumeNotes: 'Worn leather jacket, faded jeans, desert boots.',
     createdAt: '2025-02-15T10:00:00Z',
   },
   {
-    id: 'cast-2', projectId: '1', actorName: 'Sofia Mendes', characterName: 'Elena',
+    id: 'cast-2', projectId: '1',
+    actorName: 'Sofia Mendes', characterName: 'Elena',
     characterDescription: 'Marcus\'s ex-wife. Strong, composed exterior masking deep hurt. Mid-30s.',
-    status: 'confirmed', headshot: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300',
-    email: 'sofia.m@unitedtalent.com', agentName: 'James Wu',
-    scenes: [5, 12, 15, 22], shootDays: ['2025-03-17', '2025-03-20', '2025-03-22', '2025-03-26'],
-    availability: 'Available March 15–28.', performanceNotes: 'Incredible with micro-expressions. Camera loves her in close-up.',
+    status: 'confirmed',
+    headshot: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=300',
+    email: 'sofia.m@unitedtalent.com',
+    agentName: 'James Wu',
+    scenes: [5, 12, 15, 22],
+    shootDays: ['2025-03-17', '2025-03-20', '2025-03-22', '2025-03-26'],
+    availability: 'Available March 15–28.',
+    performanceNotes: 'Incredible with micro-expressions. Camera loves her in close-up.',
     costumeNotes: 'Structured blazer, dark colors. Wedding ring on a chain necklace.',
     createdAt: '2025-02-15T10:00:00Z',
   },
   {
-    id: 'cast-3', projectId: '1', actorName: 'Marcus Bell', characterName: 'Ray',
+    id: 'cast-3', projectId: '1',
+    actorName: 'Marcus Bell', characterName: 'Ray',
     characterDescription: 'Marcus\'s oldest friend. Charismatic, hides guilt behind humor. Early 40s.',
-    status: 'confirmed', scenes: [8, 18], shootDays: ['2025-03-16', '2025-03-24'],
-    availability: 'Limited — 2 days only.', performanceNotes: 'Natural comedian — needs to be reined in for dramatic beats.',
+    status: 'confirmed',
+    scenes: [8, 18],
+    shootDays: ['2025-03-16', '2025-03-24'],
+    availability: 'Limited — 2 days only.',
+    performanceNotes: 'Natural comedian — needs to be reined in for dramatic beats.',
     costumeNotes: 'Expensive but tacky — designer jeans, flashy watch.',
     createdAt: '2025-02-20T10:00:00Z',
   },
 ];
 
 // === LOOKBOOK ===
+
 export const SAMPLE_LOOKBOOK: LookbookItem[] = [
   {
-    id: 'lb-1', projectId: '1', section: 'tone', title: 'Quiet Devastation',
+    id: 'lb-1', projectId: '1', section: 'tone',
+    title: 'Quiet Devastation',
     description: 'The film lives in silences. Every conversation has more unsaid than said. Think Antonioni\'s sense of alienation but grounded in American Southwest.',
     sortOrder: 0, createdAt: '2025-02-10T10:00:00Z',
   },
   {
-    id: 'lb-2', projectId: '1', section: 'visual-style', title: 'Natural Light, Long Takes',
+    id: 'lb-2', projectId: '1', section: 'visual-style',
+    title: 'Natural Light, Long Takes',
     description: 'Shoot with available light whenever possible. Desert sequences feel like Malick — golden, expansive. Interior scenes cramped, underlit.',
     imageUrl: 'https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?w=600',
     sortOrder: 1, createdAt: '2025-02-10T10:00:00Z',
   },
   {
-    id: 'lb-3', projectId: '1', section: 'color-palette', title: 'Desert Warm / Interior Cool',
+    id: 'lb-3', projectId: '1', section: 'color-palette',
+    title: 'Desert Warm / Interior Cool',
     description: 'Exteriors: amber, burnt sienna, dusty gold. Interiors: steel blue, muted green, gray.',
-    colorHex: '#D4A76A', sortOrder: 2, createdAt: '2025-02-10T10:00:00Z',
+    colorHex: '#D4A76A',
+    sortOrder: 2, createdAt: '2025-02-10T10:00:00Z',
   },
   {
-    id: 'lb-4', projectId: '1', section: 'reference-film', title: 'Paris, Texas (1984)',
+    id: 'lb-4', projectId: '1', section: 'reference-film',
+    title: 'Paris, Texas (1984)',
     description: 'The spiritual ancestor of this film. A man walking through the desert, running from himself.',
-    referenceFilm: 'Paris, Texas', sortOrder: 3, createdAt: '2025-02-10T10:00:00Z',
+    referenceFilm: 'Paris, Texas',
+    sortOrder: 3, createdAt: '2025-02-10T10:00:00Z',
   },
   {
-    id: 'lb-5', projectId: '1', section: 'shot-style', title: 'Locked-Off Frames',
+    id: 'lb-5', projectId: '1', section: 'shot-style',
+    title: 'Locked-Off Frames',
     description: 'Minimal camera movement. When the camera moves, it means something. Static frames that let the audience study the composition.',
     sortOrder: 4, createdAt: '2025-02-10T10:00:00Z',
   },
   {
-    id: 'lb-6', projectId: '1', section: 'sound-music', title: 'Ambient Dread, Sparse Score',
+    id: 'lb-6', projectId: '1', section: 'sound-music',
+    title: 'Ambient Dread, Sparse Score',
     description: 'Wind, highway hum, distant thunder. Score enters sparingly — solo guitar, single cello line. Never sentimental.',
     sortOrder: 5, createdAt: '2025-02-10T10:00:00Z',
   },
@@ -411,33 +487,39 @@ export const SAMPLE_DIRECTOR_STATEMENT: DirectorStatement[] = [
 ];
 
 // === SELECTS ===
+
 export const SAMPLE_SELECTS: SceneSelect[] = [
   {
-    id: 'sel-1', projectId: '1', sceneNumber: 1, shotNumber: '1A', takeNumber: 4, rating: 5,
-    isCircled: true, isAlt: false,
+    id: 'sel-1', projectId: '1', sceneNumber: 1, shotNumber: '1A', takeNumber: 4,
+    rating: 5, isCircled: true, isAlt: false,
     editorNote: 'USE THIS — the long pause before he exits the car is exactly what we want.',
     performanceNote: 'Daniel found the moment naturally. The exhaustion reads perfectly.',
-    technicalNote: 'Slight focus drift at 00:42 but recoverable.', timecode: '01:02:14:08',
+    technicalNote: 'Slight focus drift at 00:42 but recoverable.',
+    timecode: '01:02:14:08',
     createdAt: '2025-03-15T18:00:00Z',
   },
   {
-    id: 'sel-2', projectId: '1', sceneNumber: 1, shotNumber: '1A', takeNumber: 2, rating: 3,
-    isCircled: false, isAlt: true,
+    id: 'sel-2', projectId: '1', sceneNumber: 1, shotNumber: '1A', takeNumber: 2,
+    rating: 3, isCircled: false, isAlt: true,
     editorNote: 'ALT — use if we need a version where he hesitates longer.',
-    performanceNote: 'More vulnerable but less controlled.', technicalNote: 'Clean technically.',
-    timecode: '01:01:48:22', createdAt: '2025-03-15T18:05:00Z',
+    performanceNote: 'More vulnerable but less controlled.',
+    technicalNote: 'Clean technically.',
+    timecode: '01:01:48:22',
+    createdAt: '2025-03-15T18:05:00Z',
   },
   {
-    id: 'sel-3', projectId: '1', sceneNumber: 5, shotNumber: '5A', takeNumber: 6, rating: 5,
-    isCircled: true, isAlt: false,
+    id: 'sel-3', projectId: '1', sceneNumber: 5, shotNumber: '5A', takeNumber: 6,
+    rating: 5, isCircled: true, isAlt: false,
     editorNote: 'CIRCLE SELECT — the phone call. Let it breathe for the full 8 seconds after hanging up. DO NOT trim.',
     performanceNote: 'Best take of the entire shoot. The crack in her voice was unplanned.',
-    technicalNote: 'Locked off, no issues.', timecode: '02:15:33:04',
+    technicalNote: 'Locked off, no issues.',
+    timecode: '02:15:33:04',
     createdAt: '2025-03-17T19:30:00Z',
   },
 ];
 
 // === COMMUNICATION HUB ===
+
 export const MESSAGE_TEMPLATES: { category: DirectorMessage['category']; label: string; subject: string; body: string; defaultRecipients: string[] }[] = [
   { category: 'moving-on', label: 'Moving On', subject: 'Moving on from Scene {scene}', body: 'We are moving on from Scene {scene}. Next up: Scene {next}. Please reset for the new setup.', defaultRecipients: ['All Departments'] },
   { category: 'pickup', label: 'Pickup Needed', subject: 'Pickup needed — Scene {scene}', body: 'We need a pickup on Scene {scene}, Shot {shot}. Reason: {reason}. Please stand by for setup details.', defaultRecipients: ['Camera', 'Sound', 'Lighting'] },
@@ -452,17 +534,20 @@ export const MESSAGE_TEMPLATES: { category: DirectorMessage['category']; label: 
 export const SAMPLE_MESSAGES: DirectorMessage[] = [
   {
     id: 'msg-1', projectId: '1', category: 'moving-on', priority: 'normal',
-    subject: 'Moving on from Scene 1', body: 'We are moving on from Scene 1. Next up: Scene 5. Please reset for the new setup.',
+    subject: 'Moving on from Scene 1',
+    body: 'We are moving on from Scene 1. Next up: Scene 5. Please reset for the new setup.',
     recipients: ['All Departments'], sentAt: '2025-03-15T11:30:00Z', sceneNumber: 1,
   },
   {
     id: 'msg-2', projectId: '1', category: 'pickup', priority: 'urgent',
-    subject: 'Pickup needed — Scene 5', body: 'We need a pickup on Scene 5, Shot 5B. Reason: dolly bump at end of take. Please stand by for setup details.',
+    subject: 'Pickup needed — Scene 5',
+    body: 'We need a pickup on Scene 5, Shot 5B. Reason: dolly bump at end of take. Please stand by for setup details.',
     recipients: ['Camera', 'Sound', 'Lighting'], sentAt: '2025-03-17T15:45:00Z', sceneNumber: 5,
   },
   {
     id: 'msg-3', projectId: '1', category: 'general', priority: 'normal',
-    subject: 'WRAP — Day 1', body: 'That\'s a wrap on Day 1! Great work everyone. Call sheet for tomorrow will be sent by 8PM. Thank you.',
+    subject: 'WRAP — Day 1',
+    body: 'That\'s a wrap on Day 1! Great work everyone. Call sheet for tomorrow will be sent by 8PM. Thank you.',
     recipients: ['All Departments'], sentAt: '2025-03-15T19:00:00Z',
   },
 ];

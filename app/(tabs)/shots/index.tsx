@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SectionList } from 'react-native';
+import React, { useMemo, useState, useRef, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SectionList, Alert, Animated as RNAnimated } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus, Camera, Check, Clock, Eye, AlertCircle } from 'lucide-react-native';
+import { Plus, Camera, Check, Clock, Eye, AlertCircle, Trash2, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useProjects, useProjectShots } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
@@ -14,48 +15,133 @@ const STATUS_CONFIG: Record<ShotStatus, { icon: React.ElementType; color: string
   approved: { icon: Check, color: Colors.status.active, label: 'Approved' },
 };
 
-function ShotCard({ shot }: { shot: Shot }) {
+function ShotCard({ shot, onDelete }: { shot: Shot; onDelete: () => void }) {
+  const [expanded, setExpanded] = useState(false);
+  const swipeableRef = useRef<Swipeable>(null);
   const config = STATUS_CONFIG[shot.status];
   const StatusIcon = config.icon;
 
+  const renderRightActions = () => (
+    <TouchableOpacity
+      style={styles.deleteAction}
+      onPress={() => {
+        swipeableRef.current?.close();
+        onDelete();
+      }}
+      activeOpacity={0.7}
+    >
+      <Trash2 color="#fff" size={18} />
+      <Text style={styles.deleteActionText}>Delete</Text>
+    </TouchableOpacity>
+  );
+
   return (
-    <View style={styles.shotCard} testID={`shot-card-${shot.id}`}>
-      <View style={styles.shotLeft}>
-        <View style={[styles.shotNumberBadge, { borderColor: config.color + '55' }]}>
-          <Text style={styles.shotNumber}>{shot.shotNumber}</Text>
-        </View>
-      </View>
-      <View style={styles.shotCenter}>
-        <Text style={styles.shotDescription} numberOfLines={2}>{shot.description}</Text>
-        <View style={styles.shotMeta}>
-          <View style={styles.shotTag}>
-            <Text style={styles.shotTagText}>{shot.type}</Text>
+    <Swipeable ref={swipeableRef} renderRightActions={renderRightActions} overshootRight={false}>
+      <TouchableOpacity
+        style={[styles.shotCard, expanded && styles.shotCardExpanded]}
+        onPress={() => setExpanded(!expanded)}
+        activeOpacity={0.7}
+        testID={`shot-card-${shot.id}`}
+      >
+        <View style={styles.shotMainRow}>
+          <View style={styles.shotLeft}>
+            <View style={[styles.shotNumberBadge, { borderColor: config.color + '55' }]}>
+              <Text style={styles.shotNumber}>{shot.shotNumber}</Text>
+            </View>
           </View>
-          <View style={styles.shotTag}>
-            <Text style={styles.shotTagText}>{shot.movement}</Text>
+
+          <View style={styles.shotCenter}>
+            <Text style={styles.shotDescription} numberOfLines={expanded ? undefined : 2}>{shot.description}</Text>
+            <View style={styles.shotMeta}>
+              <View style={styles.shotTag}>
+                <Text style={styles.shotTagText}>{shot.type}</Text>
+              </View>
+              <View style={styles.shotTag}>
+                <Text style={styles.shotTagText}>{shot.movement}</Text>
+              </View>
+              <View style={styles.shotTag}>
+                <Text style={styles.shotTagText}>{shot.lens}</Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.shotTag}>
-            <Text style={styles.shotTagText}>{shot.lens}</Text>
+
+          <View style={styles.shotRight}>
+            <View style={[styles.statusIcon, { backgroundColor: config.color + '18' }]}>
+              <StatusIcon color={config.color} size={14} />
+            </View>
+            {expanded ? (
+              <ChevronUp color={Colors.text.tertiary} size={14} style={{ marginTop: 6 }} />
+            ) : (
+              <ChevronDown color={Colors.text.tertiary} size={14} style={{ marginTop: 6 }} />
+            )}
           </View>
         </View>
-        {shot.notes ? (
-          <Text style={styles.shotNotes} numberOfLines={1}>{shot.notes}</Text>
-        ) : null}
-      </View>
-      <View style={styles.shotRight}>
-        <View style={[styles.statusIcon, { backgroundColor: config.color + '18' }]}>
-          <StatusIcon color={config.color} size={14} />
-        </View>
-      </View>
-    </View>
+
+        {expanded && (
+          <View style={styles.expandedContent}>
+            <View style={styles.divider} />
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Status</Text>
+              <View style={[styles.statusPill, { backgroundColor: config.color + '22' }]}>
+                <View style={[styles.statusDotSmall, { backgroundColor: config.color }]} />
+                <Text style={[styles.statusPillText, { color: config.color }]}>{config.label}</Text>
+              </View>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Scene</Text>
+              <Text style={styles.detailValue}>Scene {shot.sceneNumber}</Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Type</Text>
+              <Text style={styles.detailValue}>{shot.type}</Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Movement</Text>
+              <Text style={styles.detailValue}>{shot.movement}</Text>
+            </View>
+
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Lens</Text>
+              <Text style={styles.detailValue}>{shot.lens}</Text>
+            </View>
+
+            {shot.notes ? (
+              <View style={styles.notesSection}>
+                <Text style={styles.detailLabel}>Notes</Text>
+                <Text style={styles.notesText}>{shot.notes}</Text>
+              </View>
+            ) : null}
+          </View>
+        )}
+      </TouchableOpacity>
+    </Swipeable>
   );
 }
 
 export default function ShotsScreen() {
-  const { activeProject, activeProjectId } = useProjects();
+  const { activeProject, activeProjectId, deleteShot } = useProjects();
   const shots = useProjectShots(activeProjectId);
   const router = useRouter();
   const { isTablet, contentPadding } = useLayout();
+
+  const handleDeleteShot = useCallback((shot: Shot) => {
+    Alert.alert(
+      'Delete Shot',
+      `Delete shot ${shot.shotNumber} from Scene ${shot.sceneNumber}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => deleteShot(shot.id),
+        },
+      ]
+    );
+  }, [deleteShot]);
 
   const sections = useMemo(() => {
     const grouped: Record<number, Shot[]> = {};
@@ -115,7 +201,9 @@ export default function ShotsScreen() {
       <SectionList
         sections={sections}
         keyExtractor={item => item.id}
-        renderItem={({ item }) => <ShotCard shot={item} />}
+        renderItem={({ item }) => (
+          <ShotCard shot={item} onDelete={() => handleDeleteShot(item)} />
+        )}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -204,13 +292,18 @@ const styles = StyleSheet.create({
     color: Colors.text.tertiary,
   },
   shotCard: {
-    flexDirection: 'row',
     backgroundColor: Colors.bg.card,
     borderRadius: 12,
     padding: 14,
     marginBottom: 8,
     borderWidth: 0.5,
     borderColor: Colors.border.subtle,
+  },
+  shotCardExpanded: {
+    borderColor: Colors.accent.goldDim + '44',
+  },
+  shotMainRow: {
+    flexDirection: 'row',
   },
   shotLeft: {
     marginRight: 12,
@@ -257,14 +350,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
   },
-  shotNotes: {
-    fontSize: 11,
-    color: Colors.text.tertiary,
-    fontStyle: 'italic' as const,
-    marginTop: 6,
-  },
   shotRight: {
-    justifyContent: 'center',
+    alignItems: 'center',
     marginLeft: 8,
   },
   statusIcon: {
@@ -274,6 +361,85 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
+  // Expanded detail section
+  expandedContent: {
+    marginTop: 12,
+  },
+  divider: {
+    height: 0.5,
+    backgroundColor: Colors.border.subtle,
+    marginBottom: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: Colors.text.tertiary,
+    fontWeight: '600' as const,
+    textTransform: 'uppercase' as const,
+    letterSpacing: 0.5,
+  },
+  detailValue: {
+    fontSize: 13,
+    color: Colors.text.primary,
+    fontWeight: '500' as const,
+    textTransform: 'capitalize' as const,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 5,
+  },
+  statusDotSmall: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+  },
+  statusPillText: {
+    fontSize: 11,
+    fontWeight: '700' as const,
+    letterSpacing: 0.3,
+  },
+  notesSection: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: Colors.border.subtle,
+  },
+  notesText: {
+    fontSize: 13,
+    color: Colors.text.secondary,
+    lineHeight: 19,
+    marginTop: 4,
+    fontStyle: 'italic' as const,
+  },
+
+  // Delete action
+  deleteAction: {
+    backgroundColor: Colors.status.error,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 72,
+    borderRadius: 12,
+    marginBottom: 8,
+    marginLeft: 8,
+  },
+  deleteActionText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '600' as const,
+    marginTop: 3,
+  },
+
+  // Empty states
   emptyContainer: {
     flex: 1,
     backgroundColor: Colors.bg.primary,

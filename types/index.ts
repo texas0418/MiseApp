@@ -116,6 +116,8 @@ export interface LocationScout {
   rating: number;
   photoUrls: string[];
   scenes: string[];
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface BudgetItem {
@@ -332,42 +334,104 @@ export interface TimeEntry {
 
 // Script Sides
 export type SidesStatus = 'upcoming' | 'shooting-today' | 'completed' | 'revised';
-export interface SideAnnotation { id: string; text: string; type: 'blocking' | 'performance' | 'camera' | 'general'; timestamp: string; }
+
+export interface SideAnnotation {
+  id: string;
+  text: string;
+  type: 'blocking' | 'performance' | 'camera' | 'general';
+  timestamp: string;
+}
+
 export interface ScriptSide {
-  id: string; projectId: string; sceneNumber: number; sceneHeader: string;
-  pageStart: string; pageEnd: string; pageCount: number; shootDate: string; status: SidesStatus;
-  synopsis: string; castIds: string[]; linkedShotIds: string[]; annotations: SideAnnotation[];
-  revisionColor?: string; revisionDate?: string; notes: string; createdAt: string;
+  id: string;
+  projectId: string;
+  sceneNumber: number;
+  sceneHeader: string;
+  pageStart: string;
+  pageEnd: string;
+  pageCount: number;
+  shootDate: string;
+  status: SidesStatus;
+  synopsis: string;
+  castIds: string[];
+  linkedShotIds: string[];
+  annotations: SideAnnotation[];
+  revisionColor?: string;
+  revisionDate?: string;
+  notes: string;
+  createdAt: string;
 }
 
 // Cast Manager
 export type CastStatus = 'confirmed' | 'in-talks' | 'auditioned' | 'wishlist' | 'wrapped';
+
 export interface CastMember {
-  id: string; projectId: string; actorName: string; characterName: string; characterDescription: string;
-  status: CastStatus; headshot?: string; email?: string; phone?: string;
-  agentName?: string; agentContact?: string; scenes: number[]; shootDays: string[];
-  availability: string; performanceNotes: string; preferredTakes?: string; costumeNotes?: string; createdAt: string;
+  id: string;
+  projectId: string;
+  actorName: string;
+  characterName: string;
+  characterDescription: string;
+  status: CastStatus;
+  headshot?: string;
+  email?: string;
+  phone?: string;
+  agentName?: string;
+  agentContact?: string;
+  scenes: number[];
+  shootDays: string[];
+  availability: string;
+  performanceNotes: string;
+  preferredTakes?: string;
+  costumeNotes?: string;
+  createdAt: string;
 }
 
 // Director's Lookbook
 export type LookbookSectionType = 'tone' | 'visual-style' | 'color-palette' | 'shot-style' | 'reference-film' | 'character-look' | 'world-building' | 'sound-music' | 'custom';
+
 export interface LookbookItem {
-  id: string; projectId: string; section: LookbookSectionType; title: string; description: string;
-  imageUrl?: string; referenceFilm?: string; colorHex?: string; sortOrder: number; createdAt: string;
+  id: string;
+  projectId: string;
+  section: LookbookSectionType;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  referenceFilm?: string;
+  colorHex?: string;
+  sortOrder: number;
+  createdAt: string;
 }
-export interface DirectorStatement { id: string; projectId: string; text: string; updatedAt: string; }
+
+export interface DirectorStatement {
+  id: string;
+  projectId: string;
+  text: string;
+  updatedAt: string;
+}
 
 // Scene Selects
 export type SelectRating = 1 | 2 | 3 | 4 | 5;
+
 export interface SceneSelect {
-  id: string; projectId: string; sceneNumber: number; shotNumber: string; takeNumber: number;
-  rating: SelectRating; isCircled: boolean; isAlt: boolean; editorNote: string;
-  performanceNote: string; technicalNote: string; timecode?: string; createdAt: string;
+  id: string;
+  projectId: string;
+  sceneNumber: number;
+  shotNumber: string;
+  takeNumber: number;
+  rating: SelectRating;
+  isCircled: boolean;
+  isAlt: boolean;
+  editorNote: string;
+  performanceNote: string;
+  technicalNote: string;
+  timecode?: string;
+  createdAt: string;
 }
 
 // Communication Hub
 export type MessagePriority = 'normal' | 'urgent' | 'fyi';
 export type MessageCategory = 'moving-on' | 'pickup' | 'schedule-change' | 'safety' | 'creative' | 'general';
+
 export interface DirectorMessage {
   id: string;
   projectId: string;
