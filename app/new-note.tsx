@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import { ChevronDown } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { useProjects } from '@/contexts/ProjectContext';
+import { useProjects, useProjectNotes } from '@/contexts/ProjectContext';
 import Colors from '@/constants/colors';
 import { NoteCategory } from '@/types';
 
@@ -18,7 +18,12 @@ const CATEGORY_OPTIONS: { label: string; value: NoteCategory }[] = [
 
 export default function NewNoteScreen() {
   const router = useRouter();
-  const { addNote, activeProjectId, activeProject } = useProjects();
+  const { addNote, updateNote, activeProjectId, activeProject } = useProjects();
+  const notes = useProjectNotes(activeProjectId);
+  const params = useLocalSearchParams<{ id?: string }>();
+  const editId = params.id;
+  const existingItem = editId ? notes.find(n => n.id === editId) : null;
+  const isEditing = !!existingItem;
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -26,23 +31,47 @@ export default function NewNoteScreen() {
   const [pinned, setPinned] = useState(false);
   const [showCategories, setShowCategories] = useState(false);
 
+  // Pre-fill when editing
+  useEffect(() => {
+    if (existingItem) {
+      setTitle(existingItem.title);
+      setContent(existingItem.content || '');
+      setCategory(existingItem.category);
+      setPinned(existingItem.pinned);
+    }
+  }, [existingItem?.id]);
+
   const handleSave = useCallback(() => {
-    if (!activeProjectId) { Alert.alert('No Project', 'Select a project first.'); return; }
-    if (!title.trim()) { Alert.alert('Missing Title', 'Enter a note title.'); return; }
+    if (!activeProjectId) {
+      Alert.alert('No Project', 'Select a project first.');
+      return;
+    }
+    if (!title.trim()) {
+      Alert.alert('Missing Title', 'Enter a note title.');
+      return;
+    }
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
     const now = new Date().toISOString();
-    addNote({
-      id: Date.now().toString(),
+    const data = {
+      id: isEditing ? existingItem!.id : Date.now().toString(),
       projectId: activeProjectId,
       title: title.trim(),
       content: content.trim(),
       category,
-      createdAt: now,
+      createdAt: isEditing ? existingItem!.createdAt : now,
       updatedAt: now,
       pinned,
-    });
+    };
+
+    if (isEditing) {
+      updateNote(data);
+    } else {
+      addNote(data);
+    }
     router.back();
-  }, [activeProjectId, title, content, category, pinned, addNote, router]);
+  }, [activeProjectId, title, content, category, pinned, isEditing, existingItem, addNote, updateNote, router]);
 
   if (!activeProject) {
     return (<View style={styles.emptyContainer}><Text style={styles.emptyTitle}>No project selected</Text></View>);
@@ -50,13 +79,20 @@ export default function NewNoteScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <Stack.Screen options={{ title: isEditing ? 'Edit Note' : 'New Note' }} />
+
       <View style={styles.projectLabel}>
-        <Text style={styles.projectLabelText}>Note for: {activeProject.title}</Text>
+        <Text style={styles.projectLabelText}>
+          {isEditing ? `Editing: ${existingItem!.title}` : `Note for: ${activeProject.title}`}
+        </Text>
       </View>
+
       <View style={styles.field}>
         <Text style={styles.label}>Title</Text>
-        <TextInput style={styles.input} value={title} onChangeText={setTitle} placeholder="Note title" placeholderTextColor={Colors.text.tertiary} />
+        <TextInput style={styles.input} value={title} onChangeText={setTitle}
+          placeholder="Note title" placeholderTextColor={Colors.text.tertiary} />
       </View>
+
       <View style={styles.field}>
         <Text style={styles.label}>Category</Text>
         <TouchableOpacity style={styles.selector} onPress={() => setShowCategories(!showCategories)}>
@@ -66,23 +102,32 @@ export default function NewNoteScreen() {
         {showCategories && (
           <View style={styles.optionsList}>
             {CATEGORY_OPTIONS.map(c => (
-              <TouchableOpacity key={c.value} style={[styles.option, category === c.value && styles.optionActive]} onPress={() => { setCategory(c.value); setShowCategories(false); }}>
+              <TouchableOpacity key={c.value}
+                style={[styles.option, category === c.value && styles.optionActive]}
+                onPress={() => { setCategory(c.value); setShowCategories(false); }}>
                 <Text style={[styles.optionText, category === c.value && styles.optionTextActive]}>{c.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         )}
       </View>
+
       <View style={styles.switchRow}>
         <Text style={styles.switchLabel}>Pin Note</Text>
-        <Switch value={pinned} onValueChange={setPinned} trackColor={{ true: Colors.accent.gold, false: Colors.bg.elevated }} thumbColor={Colors.text.primary} />
+        <Switch value={pinned} onValueChange={setPinned}
+          trackColor={{ true: Colors.accent.gold, false: Colors.bg.elevated }}
+          thumbColor={Colors.text.primary} />
       </View>
+
       <View style={styles.field}>
         <Text style={styles.label}>Content</Text>
-        <TextInput style={[styles.input, styles.textArea]} value={content} onChangeText={setContent} placeholder="Write your note here..." placeholderTextColor={Colors.text.tertiary} multiline numberOfLines={8} textAlignVertical="top" />
+        <TextInput style={[styles.input, styles.textArea]} value={content} onChangeText={setContent}
+          placeholder="Write your note here..." placeholderTextColor={Colors.text.tertiary}
+          multiline numberOfLines={8} textAlignVertical="top" />
       </View>
+
       <TouchableOpacity style={styles.saveButton} onPress={handleSave} activeOpacity={0.8}>
-        <Text style={styles.saveButtonText}>Save Note</Text>
+        <Text style={styles.saveButtonText}>{isEditing ? 'Save Changes' : 'Save Note'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
