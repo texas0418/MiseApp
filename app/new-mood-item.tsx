@@ -1,10 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Image } from 'expo-image';
 import { ChevronDown, ImagePlus } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { useProjects } from '@/contexts/ProjectContext';
+import { useProjects, useProjectMoodBoard } from '@/contexts/ProjectContext';
 import { showImagePickerOptions } from '@/utils/imagePicker';
 import Colors from '@/constants/colors';
 import { MoodBoardItemType } from '@/types';
@@ -17,7 +17,12 @@ const TYPE_OPTIONS: { label: string; value: MoodBoardItemType }[] = [
 
 export default function NewMoodItemScreen() {
   const router = useRouter();
-  const { addMoodBoardItem, activeProjectId, activeProject } = useProjects();
+  const { addMoodBoardItem, updateMoodBoardItem, activeProjectId, activeProject } = useProjects();
+  const moodItems = useProjectMoodBoard(activeProjectId);
+  const params = useLocalSearchParams<{ id?: string }>();
+  const editId = params.id;
+  const existingItem = editId ? moodItems.find(m => m.id === editId) : null;
+  const isEditing = !!existingItem;
 
   const [boardName, setBoardName] = useState('Visual Tone');
   const [type, setType] = useState<MoodBoardItemType>('reference');
@@ -27,12 +32,32 @@ export default function NewMoodItemScreen() {
   const [note, setNote] = useState('');
   const [showType, setShowType] = useState(false);
 
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (existingItem) {
+      setBoardName(existingItem.boardName);
+      setType(existingItem.type);
+      setLabel(existingItem.label);
+      setImageUrl(existingItem.imageUrl || '');
+      setColor(existingItem.color || '#');
+      setNote(existingItem.note || '');
+    }
+  }, [existingItem?.id]);
+
   const handleSave = useCallback(() => {
-    if (!activeProjectId) { Alert.alert('No Project', 'Select a project first.'); return; }
-    if (!label.trim()) { Alert.alert('Missing Label', 'Enter a label for this item.'); return; }
+    if (!activeProjectId) {
+      Alert.alert('No Project', 'Select a project first.');
+      return;
+    }
+    if (!label.trim()) {
+      Alert.alert('Missing Label', 'Enter a label for this item.');
+      return;
+    }
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    addMoodBoardItem({
-      id: Date.now().toString(),
+
+    const data = {
+      id: isEditing ? existingItem!.id : Date.now().toString(),
       projectId: activeProjectId,
       boardName: boardName.trim() || 'Visual Tone',
       type,
@@ -40,9 +65,15 @@ export default function NewMoodItemScreen() {
       imageUrl: type === 'reference' ? imageUrl.trim() : undefined,
       color: type === 'color' ? color.trim() : undefined,
       note: type === 'note' ? note.trim() : undefined,
-    });
+    };
+
+    if (isEditing) {
+      updateMoodBoardItem(data);
+    } else {
+      addMoodBoardItem(data);
+    }
     router.back();
-  }, [activeProjectId, boardName, type, label, imageUrl, color, note, addMoodBoardItem, router]);
+  }, [activeProjectId, boardName, type, label, imageUrl, color, note, addMoodBoardItem, updateMoodBoardItem, router, isEditing, existingItem]);
 
   if (!activeProject) {
     return (<View style={styles.emptyContainer}><Text style={styles.emptyTitle}>No project selected</Text></View>);
@@ -50,13 +81,18 @@ export default function NewMoodItemScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <Stack.Screen options={{ title: isEditing ? 'Edit Mood Board Item' : 'New Mood Board Item' }} />
+
       <View style={styles.projectLabel}>
-        <Text style={styles.projectLabelText}>Mood board for: {activeProject.title}</Text>
+        <Text style={styles.projectLabelText}>
+          {isEditing ? `Editing: ${existingItem!.label}` : `Mood board for: ${activeProject.title}`}
+        </Text>
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>Board Name</Text>
-        <TextInput style={styles.input} value={boardName} onChangeText={setBoardName} placeholder="Visual Tone" placeholderTextColor={Colors.text.tertiary} />
+        <TextInput style={styles.input} value={boardName} onChangeText={setBoardName}
+          placeholder="Visual Tone" placeholderTextColor={Colors.text.tertiary} />
       </View>
 
       <View style={styles.field}>
@@ -68,7 +104,9 @@ export default function NewMoodItemScreen() {
         {showType && (
           <View style={styles.optionsList}>
             {TYPE_OPTIONS.map(t => (
-              <TouchableOpacity key={t.value} style={[styles.option, type === t.value && styles.optionActive]} onPress={() => { setType(t.value); setShowType(false); }}>
+              <TouchableOpacity key={t.value}
+                style={[styles.option, type === t.value && styles.optionActive]}
+                onPress={() => { setType(t.value); setShowType(false); }}>
                 <Text style={[styles.optionText, type === t.value && styles.optionTextActive]}>{t.label}</Text>
               </TouchableOpacity>
             ))}
@@ -78,7 +116,8 @@ export default function NewMoodItemScreen() {
 
       <View style={styles.field}>
         <Text style={styles.label}>Label</Text>
-        <TextInput style={styles.input} value={label} onChangeText={setLabel} placeholder="Name this item" placeholderTextColor={Colors.text.tertiary} />
+        <TextInput style={styles.input} value={label} onChangeText={setLabel}
+          placeholder="Name this item" placeholderTextColor={Colors.text.tertiary} />
       </View>
 
       {type === 'reference' && (
@@ -102,7 +141,9 @@ export default function NewMoodItemScreen() {
             </TouchableOpacity>
           )}
           <Text style={styles.orText}>or paste a URL:</Text>
-          <TextInput style={styles.input} value={imageUrl} onChangeText={setImageUrl} placeholder="https://..." placeholderTextColor={Colors.text.tertiary} autoCapitalize="none" keyboardType="url" />
+          <TextInput style={styles.input} value={imageUrl} onChangeText={setImageUrl}
+            placeholder="https://..." placeholderTextColor={Colors.text.tertiary}
+            autoCapitalize="none" keyboardType="url" />
         </View>
       )}
 
@@ -110,7 +151,8 @@ export default function NewMoodItemScreen() {
         <View style={styles.field}>
           <Text style={styles.label}>Color (hex)</Text>
           <View style={styles.colorRow}>
-            <TextInput style={[styles.input, { flex: 1 }]} value={color} onChangeText={setColor} placeholder="#C8A04A" placeholderTextColor={Colors.text.tertiary} autoCapitalize="none" />
+            <TextInput style={[styles.input, { flex: 1 }]} value={color} onChangeText={setColor}
+              placeholder="#C8A04A" placeholderTextColor={Colors.text.tertiary} autoCapitalize="none" />
             <View style={[styles.colorPreview, { backgroundColor: color.startsWith('#') && color.length >= 4 ? color : '#333' }]} />
           </View>
         </View>
@@ -119,12 +161,14 @@ export default function NewMoodItemScreen() {
       {type === 'note' && (
         <View style={styles.field}>
           <Text style={styles.label}>Note</Text>
-          <TextInput style={[styles.input, styles.textArea]} value={note} onChangeText={setNote} placeholder="Describe the visual direction..." placeholderTextColor={Colors.text.tertiary} multiline numberOfLines={5} textAlignVertical="top" />
+          <TextInput style={[styles.input, styles.textArea]} value={note} onChangeText={setNote}
+            placeholder="Describe the visual direction..." placeholderTextColor={Colors.text.tertiary}
+            multiline numberOfLines={5} textAlignVertical="top" />
         </View>
       )}
 
       <TouchableOpacity style={styles.saveButton} onPress={handleSave} activeOpacity={0.8}>
-        <Text style={styles.saveButtonText}>Add to Mood Board</Text>
+        <Text style={styles.saveButtonText}>{isEditing ? 'Save Changes' : 'Add to Mood Board'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
