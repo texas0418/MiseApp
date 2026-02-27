@@ -1,16 +1,21 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { Image } from 'expo-image';
 import { Camera, ImagePlus, X } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
-import { useProjects } from '@/contexts/ProjectContext';
+import { useProjects, useProjectLocations } from '@/contexts/ProjectContext';
 import { showImagePickerOptions } from '@/utils/imagePicker';
 import Colors from '@/constants/colors';
 
 export default function NewLocationScreen() {
   const router = useRouter();
-  const { addLocation, activeProjectId, activeProject } = useProjects();
+  const { addLocation, updateLocation, activeProjectId, activeProject } = useProjects();
+  const locations = useProjectLocations(activeProjectId);
+  const params = useLocalSearchParams<{ id?: string }>();
+  const editId = params.id;
+  const existingItem = editId ? locations.find(l => l.id === editId) : null;
+  const isEditing = !!existingItem;
 
   const [name, setName] = useState('');
   const [address, setAddress] = useState('');
@@ -25,6 +30,24 @@ export default function NewLocationScreen() {
   const [scenes, setScenes] = useState('');
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
 
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (existingItem) {
+      setName(existingItem.name);
+      setAddress(existingItem.address);
+      setContactName(existingItem.contactName || '');
+      setContactPhone(existingItem.contactPhone || '');
+      setPermitRequired(existingItem.permitRequired);
+      setPermitStatus(existingItem.permitStatus || '');
+      setParkingNotes(existingItem.parkingNotes || '');
+      setPowerAvailable(existingItem.powerAvailable);
+      setNotes(existingItem.notes || '');
+      setRating(existingItem.rating);
+      setScenes(existingItem.scenes.join(', '));
+      setPhotoUrls(existingItem.photoUrls || []);
+    }
+  }, [existingItem?.id]);
+
   const handleAddPhoto = useCallback(() => {
     showImagePickerOptions((uri) => {
       setPhotoUrls(prev => [...prev, uri]);
@@ -36,11 +59,19 @@ export default function NewLocationScreen() {
   }, []);
 
   const handleSave = useCallback(() => {
-    if (!activeProjectId) { Alert.alert('No Project', 'Select a project first.'); return; }
-    if (!name.trim()) { Alert.alert('Missing Info', 'Enter a location name.'); return; }
+    if (!activeProjectId) {
+      Alert.alert('No Project', 'Select a project first.');
+      return;
+    }
+    if (!name.trim()) {
+      Alert.alert('Missing Info', 'Enter a location name.');
+      return;
+    }
+
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    addLocation({
-      id: Date.now().toString(),
+
+    const data = {
+      id: isEditing ? existingItem!.id : Date.now().toString(),
       projectId: activeProjectId,
       name: name.trim(),
       address: address.trim(),
@@ -54,9 +85,15 @@ export default function NewLocationScreen() {
       rating,
       photoUrls,
       scenes: scenes.trim() ? scenes.split(',').map(s => s.trim()) : [],
-    });
+    };
+
+    if (isEditing) {
+      updateLocation(data);
+    } else {
+      addLocation(data);
+    }
     router.back();
-  }, [activeProjectId, name, address, contactName, contactPhone, permitRequired, permitStatus, parkingNotes, powerAvailable, notes, rating, scenes, addLocation, router]);
+  }, [activeProjectId, name, address, contactName, contactPhone, permitRequired, permitStatus, parkingNotes, powerAvailable, notes, rating, scenes, photoUrls, addLocation, updateLocation, router, isEditing, existingItem]);
 
   if (!activeProject) {
     return (
@@ -68,64 +105,78 @@ export default function NewLocationScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <Stack.Screen options={{ title: isEditing ? 'Edit Location' : 'New Location' }} />
+
       <View style={styles.projectLabel}>
-        <Text style={styles.projectLabelText}>Location for: {activeProject.title}</Text>
+        <Text style={styles.projectLabelText}>
+          {isEditing ? `Editing: ${existingItem!.name}` : `Location for: ${activeProject.title}`}
+        </Text>
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>Location Name</Text>
-        <TextInput style={styles.input} value={name} onChangeText={setName} placeholder="e.g. Beach at Point Reyes" placeholderTextColor={Colors.text.tertiary} />
+        <TextInput style={styles.input} value={name} onChangeText={setName}
+          placeholder="e.g. Beach at Point Reyes" placeholderTextColor={Colors.text.tertiary} />
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>Address</Text>
-        <TextInput style={styles.input} value={address} onChangeText={setAddress} placeholder="Full address" placeholderTextColor={Colors.text.tertiary} />
+        <TextInput style={styles.input} value={address} onChangeText={setAddress}
+          placeholder="Full address" placeholderTextColor={Colors.text.tertiary} />
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>Scenes (comma separated)</Text>
-        <TextInput style={styles.input} value={scenes} onChangeText={setScenes} placeholder="1, 5, 8" placeholderTextColor={Colors.text.tertiary} />
+        <TextInput style={styles.input} value={scenes} onChangeText={setScenes}
+          placeholder="1, 5, 8" placeholderTextColor={Colors.text.tertiary} />
       </View>
 
       <View style={styles.row}>
         <View style={[styles.field, { flex: 1 }]}>
           <Text style={styles.label}>Contact Name</Text>
-          <TextInput style={styles.input} value={contactName} onChangeText={setContactName} placeholder="Name" placeholderTextColor={Colors.text.tertiary} />
+          <TextInput style={styles.input} value={contactName} onChangeText={setContactName}
+            placeholder="Name" placeholderTextColor={Colors.text.tertiary} />
         </View>
         <View style={{ width: 12 }} />
         <View style={[styles.field, { flex: 1 }]}>
           <Text style={styles.label}>Contact Phone</Text>
-          <TextInput style={styles.input} value={contactPhone} onChangeText={setContactPhone} placeholder="Phone" placeholderTextColor={Colors.text.tertiary} keyboardType="phone-pad" />
+          <TextInput style={styles.input} value={contactPhone} onChangeText={setContactPhone}
+            placeholder="Phone" placeholderTextColor={Colors.text.tertiary} keyboardType="phone-pad" />
         </View>
       </View>
 
       <View style={styles.switchRow}>
         <Text style={styles.switchLabel}>Permit Required</Text>
-        <Switch value={permitRequired} onValueChange={setPermitRequired} trackColor={{ true: Colors.accent.gold, false: Colors.bg.elevated }} thumbColor={Colors.text.primary} />
+        <Switch value={permitRequired} onValueChange={setPermitRequired}
+          trackColor={{ true: Colors.accent.gold, false: Colors.bg.elevated }} thumbColor={Colors.text.primary} />
       </View>
 
       {permitRequired && (
         <View style={styles.field}>
           <Text style={styles.label}>Permit Status</Text>
-          <TextInput style={styles.input} value={permitStatus} onChangeText={setPermitStatus} placeholder="Pending, Approved, etc." placeholderTextColor={Colors.text.tertiary} />
+          <TextInput style={styles.input} value={permitStatus} onChangeText={setPermitStatus}
+            placeholder="Pending, Approved, etc." placeholderTextColor={Colors.text.tertiary} />
         </View>
       )}
 
       <View style={styles.switchRow}>
         <Text style={styles.switchLabel}>Power Available</Text>
-        <Switch value={powerAvailable} onValueChange={setPowerAvailable} trackColor={{ true: Colors.accent.gold, false: Colors.bg.elevated }} thumbColor={Colors.text.primary} />
+        <Switch value={powerAvailable} onValueChange={setPowerAvailable}
+          trackColor={{ true: Colors.accent.gold, false: Colors.bg.elevated }} thumbColor={Colors.text.primary} />
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>Parking Notes</Text>
-        <TextInput style={styles.input} value={parkingNotes} onChangeText={setParkingNotes} placeholder="Parking availability" placeholderTextColor={Colors.text.tertiary} />
+        <TextInput style={styles.input} value={parkingNotes} onChangeText={setParkingNotes}
+          placeholder="Parking availability" placeholderTextColor={Colors.text.tertiary} />
       </View>
 
       <View style={styles.field}>
         <Text style={styles.label}>Rating (1-5)</Text>
         <View style={styles.ratingRow}>
           {[1, 2, 3, 4, 5].map(r => (
-            <TouchableOpacity key={r} style={[styles.ratingBtn, rating >= r && styles.ratingBtnActive]} onPress={() => setRating(r)}>
+            <TouchableOpacity key={r} style={[styles.ratingBtn, rating >= r && styles.ratingBtnActive]}
+              onPress={() => setRating(r)}>
               <Text style={[styles.ratingText, rating >= r && styles.ratingTextActive]}>{r}</Text>
             </TouchableOpacity>
           ))}
@@ -152,11 +203,13 @@ export default function NewLocationScreen() {
 
       <View style={styles.field}>
         <Text style={styles.label}>Notes</Text>
-        <TextInput style={[styles.input, styles.textArea]} value={notes} onChangeText={setNotes} placeholder="Power, parking, access notes..." placeholderTextColor={Colors.text.tertiary} multiline numberOfLines={3} textAlignVertical="top" />
+        <TextInput style={[styles.input, styles.textArea]} value={notes} onChangeText={setNotes}
+          placeholder="Power, parking, access notes..." placeholderTextColor={Colors.text.tertiary}
+          multiline numberOfLines={3} textAlignVertical="top" />
       </View>
 
       <TouchableOpacity style={styles.saveButton} onPress={handleSave} activeOpacity={0.8}>
-        <Text style={styles.saveButtonText}>Add Location</Text>
+        <Text style={styles.saveButtonText}>{isEditing ? 'Save Changes' : 'Add Location'}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
