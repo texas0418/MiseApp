@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, TextInput, KeyboardAvoidingView, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useProjects } from '@/contexts/ProjectContext';
@@ -12,6 +12,7 @@ export default function DigitalSlateScreen() {
   const [take, setTake] = useState('1');
   const [isClapped, setIsClapped] = useState(false);
   const [timestamp, setTimestamp] = useState('');
+
   const slapAnim = useRef(new Animated.Value(0)).current;
   const flashAnim = useRef(new Animated.Value(0)).current;
 
@@ -24,106 +25,98 @@ export default function DigitalSlateScreen() {
   }, []);
 
   const handleClap = useCallback(() => {
+    Keyboard.dismiss();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsClapped(true);
-
     Animated.sequence([
       Animated.timing(slapAnim, { toValue: 1, duration: 80, useNativeDriver: true }),
       Animated.timing(slapAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
     ]).start();
-
     Animated.sequence([
       Animated.timing(flashAnim, { toValue: 1, duration: 50, useNativeDriver: true }),
       Animated.timing(flashAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
     ]).start();
-
     setTimeout(() => setIsClapped(false), 1500);
   }, []);
 
   const incrementTake = useCallback(() => {
+    Keyboard.dismiss();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setTake(prev => String(parseInt(prev, 10) + 1 || 1));
   }, []);
 
-  const slapRotate = slapAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-15deg'] });
+  const slapRotate = slapAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '-15deg'],
+  });
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+    >
       <Stack.Screen options={{ title: 'Digital Slate', headerStyle: { backgroundColor: '#000' } }} />
 
       <Animated.View style={[styles.flash, { opacity: flashAnim }]} pointerEvents="none" />
 
-      <View style={styles.slateBody}>
-        <Animated.View style={[styles.slapStick, { transform: [{ rotate: slapRotate }] }]}>
-          <View style={styles.slapStickInner}>
-            {[0, 1, 2, 3, 4, 5, 6].map(i => (
-              <View key={i} style={[styles.slapStripe, i % 2 === 0 ? styles.stripeBlack : styles.stripeWhite]} />
-            ))}
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.slateBody}>
+          <Animated.View style={[styles.slapStick, { transform: [{ rotate: slapRotate }] }]}>
+            <View style={styles.slapStickInner}>
+              {[0, 1, 2, 3, 4, 5, 6].map(i => (
+                <View key={i} style={[styles.slapStripe, i % 2 === 0 ? styles.stripeBlack : styles.stripeWhite]} />
+              ))}
+            </View>
+          </Animated.View>
+
+          <View style={styles.slateContent}>
+            <Text style={styles.prodTitle}>{activeProject?.title ?? 'PRODUCTION'}</Text>
+            <Text style={styles.directorText}>Dir: {activeProject?.director ?? 'Director'}</Text>
+
+            <View style={styles.slateGrid}>
+              <View style={styles.slateCell}>
+                <Text style={styles.slateCellLabel}>SCENE</Text>
+                <TextInput style={styles.slateCellValue} value={scene} onChangeText={setScene}
+                  keyboardType="default" textAlign="center" returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
+              </View>
+              <View style={styles.slateDivider} />
+              <View style={styles.slateCell}>
+                <Text style={styles.slateCellLabel}>SHOT</Text>
+                <TextInput style={styles.slateCellValue} value={shot} onChangeText={setShot}
+                  keyboardType="default" textAlign="center" returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
+              </View>
+              <View style={styles.slateDivider} />
+              <View style={styles.slateCell}>
+                <Text style={styles.slateCellLabel}>TAKE</Text>
+                <TextInput style={styles.slateCellValue} value={take} onChangeText={setTake}
+                  keyboardType="number-pad" textAlign="center" returnKeyType="done" onSubmitEditing={Keyboard.dismiss} />
+              </View>
+            </View>
+
+            <View style={styles.timeRow}>
+              <Text style={styles.timeText}>{timestamp}</Text>
+              <Text style={styles.dateText}>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+            </View>
+
+            {isClapped && (
+              <View style={styles.clappedBadge}>
+                <Text style={styles.clappedText}>MARK!</Text>
+              </View>
+            )}
           </View>
-        </Animated.View>
-
-        <View style={styles.slateContent}>
-          <Text style={styles.prodTitle}>{activeProject?.title ?? 'PRODUCTION'}</Text>
-          <Text style={styles.directorText}>Dir: {activeProject?.director ?? 'Director'}</Text>
-
-          <View style={styles.slateGrid}>
-            <View style={styles.slateCell}>
-              <Text style={styles.slateCellLabel}>SCENE</Text>
-              <TextInput
-                style={styles.slateCellValue}
-                value={scene}
-                onChangeText={setScene}
-                keyboardType="default"
-                textAlign="center"
-              />
-            </View>
-            <View style={styles.slateDivider} />
-            <View style={styles.slateCell}>
-              <Text style={styles.slateCellLabel}>SHOT</Text>
-              <TextInput
-                style={styles.slateCellValue}
-                value={shot}
-                onChangeText={setShot}
-                keyboardType="default"
-                textAlign="center"
-              />
-            </View>
-            <View style={styles.slateDivider} />
-            <View style={styles.slateCell}>
-              <Text style={styles.slateCellLabel}>TAKE</Text>
-              <TextInput
-                style={styles.slateCellValue}
-                value={take}
-                onChangeText={setTake}
-                keyboardType="number-pad"
-                textAlign="center"
-              />
-            </View>
-          </View>
-
-          <View style={styles.timeRow}>
-            <Text style={styles.timeText}>{timestamp}</Text>
-            <Text style={styles.dateText}>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
-          </View>
-
-          {isClapped && (
-            <View style={styles.clappedBadge}>
-              <Text style={styles.clappedText}>MARK!</Text>
-            </View>
-          )}
         </View>
-      </View>
+      </TouchableWithoutFeedback>
 
       <View style={styles.controls}>
         <TouchableOpacity style={styles.nextTakeBtn} onPress={incrementTake} activeOpacity={0.7}>
           <Text style={styles.nextTakeText}>Next Take</Text>
         </TouchableOpacity>
-
         <TouchableOpacity style={styles.clapBtn} onPress={handleClap} activeOpacity={0.8}>
           <Text style={styles.clapBtnText}>CLAP</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
