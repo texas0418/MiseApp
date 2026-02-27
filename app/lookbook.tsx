@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, SectionList, TouchableOpacity, Animated, Alert, TextInput } from 'react-native';
+import { View, Text, StyleSheet, SectionList, TouchableOpacity, Animated, Alert, TextInput, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Plus, Trash2, Film, Palette, Eye, Camera, Music, Shirt, Globe, Sparkles, PenLine, ChevronDown, ChevronUp, Pencil } from 'lucide-react-native';
@@ -21,11 +21,7 @@ const SECTION_CONFIG: Record<LookbookSectionType, { label: string; icon: React.E
 };
 
 function LookbookCard({ item, isExpanded, onPress, onEdit, onDelete }: {
-  item: LookbookItem;
-  isExpanded: boolean;
-  onPress: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
+  item: LookbookItem; isExpanded: boolean; onPress: () => void; onEdit: () => void; onDelete: () => void;
 }) {
   const handleDelete = () => {
     Alert.alert('Remove', `Delete "${item.title}"?`, [
@@ -73,14 +69,12 @@ function LookbookCard({ item, isExpanded, onPress, onEdit, onDelete }: {
         {isExpanded && (
           <>
             <Text style={styles.cardDescFull}>{item.description}</Text>
-
             {item.colorHex && (
               <View style={styles.colorInfo}>
                 <View style={[styles.colorDot, { backgroundColor: item.colorHex }]} />
                 <Text style={styles.colorHexText}>{item.colorHex}</Text>
               </View>
             )}
-
             <View style={styles.cardActions}>
               <TouchableOpacity onPress={onEdit} style={styles.editBtn}>
                 <Pencil color={Colors.accent.gold} size={15} />
@@ -99,8 +93,7 @@ function LookbookCard({ item, isExpanded, onPress, onEdit, onDelete }: {
 }
 
 function DirectorStatementSection({ statement, onSave }: {
-  statement: DirectorStatement | null;
-  onSave: (text: string) => void;
+  statement: DirectorStatement | null; onSave: (text: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(statement?.text || '');
@@ -179,7 +172,10 @@ export default function LookbookScreen() {
     }
   }, [statement, activeProjectId, addDirectorStatement, updateDirectorStatement]);
 
-  const sectionOrder: LookbookSectionType[] = ['tone', 'visual-style', 'color-palette', 'shot-style', 'reference-film', 'character-look', 'world-building', 'sound-music', 'custom'];
+  const sectionOrder: LookbookSectionType[] = [
+    'tone', 'visual-style', 'color-palette', 'shot-style', 'reference-film',
+    'character-look', 'world-building', 'sound-music', 'custom',
+  ];
 
   const sections = sectionOrder
     .map(sType => ({
@@ -265,9 +261,9 @@ const styles = StyleSheet.create({
   statementTitle: { fontSize: 14, fontWeight: '700' as const, color: Colors.accent.gold },
   statementBody: { padding: 16 },
   statementText: { fontSize: 14, color: Colors.text.secondary, lineHeight: 22 },
-  statementPlaceholder: { fontSize: 14, color: Colors.text.tertiary, fontStyle: 'italic', lineHeight: 22 },
+  statementPlaceholder: { fontSize: 14, color: Colors.text.tertiary, fontStyle: 'italic' as const, lineHeight: 22 },
   tapToEdit: { fontSize: 10, color: Colors.text.tertiary, marginTop: 8, textAlign: 'right' },
-  statementInput: { backgroundColor: Colors.bg.tertiary, borderRadius: 10, padding: 14, fontSize: 14, color: Colors.text.primary, lineHeight: 22, minHeight: 160, textAlignVertical: 'top', borderWidth: 0.5, borderColor: Colors.accent.gold + '33' },
+  statementInput: { backgroundColor: Colors.bg.tertiary, borderRadius: 10, padding: 14, fontSize: 14, color: Colors.text.primary, lineHeight: 22, minHeight: 160, textAlignVertical: 'top' as const, borderWidth: 0.5, borderColor: Colors.accent.gold + '33' },
   statementActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginTop: 10 },
   cancelBtn: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 8, backgroundColor: Colors.bg.tertiary },
   cancelBtnText: { fontSize: 13, color: Colors.text.secondary, fontWeight: '600' as const },
@@ -285,7 +281,7 @@ const styles = StyleSheet.create({
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
   cardTitle: { fontSize: 16, fontWeight: '700' as const, color: Colors.text.primary, flex: 1, marginRight: 8 },
   refFilmBadge: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 },
-  refFilmText: { fontSize: 12, color: Colors.accent.goldDim, fontWeight: '500' as const, fontStyle: 'italic' },
+  refFilmText: { fontSize: 12, color: Colors.accent.goldDim, fontWeight: '500' as const, fontStyle: 'italic' as const },
   cardDesc: { fontSize: 13, color: Colors.text.secondary, lineHeight: 20 },
   cardDescFull: { fontSize: 13, color: Colors.text.secondary, lineHeight: 20, marginBottom: 10 },
   colorInfo: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
