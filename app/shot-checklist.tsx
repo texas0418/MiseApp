@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet, SectionList, TouchableOpacity, Alert } from 'react-native';
-import { Camera, Check, CheckCheck, Circle, CircleDot, RotateCcw, ChevronDown, ChevronUp } from 'lucide-react-native';
+import { Camera, Check, CheckCheck, Circle, CircleDot, RotateCcw, ChevronDown, ChevronUp, Plus } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import { useProjects, useProjectShots } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { Shot, ShotStatus } from '@/types';
 
 const STATUS_FLOW: ShotStatus[] = ['planned', 'ready', 'shot', 'approved'];
-
 const STATUS_CONFIG: Record<ShotStatus, { label: string; color: string; icon: React.ElementType }> = {
   'planned': { label: 'Planned', color: Colors.text.tertiary, icon: Circle },
   'ready': { label: 'Ready', color: '#60A5FA', icon: CircleDot },
@@ -55,7 +55,7 @@ export default function ShotChecklistScreen() {
   const { activeProjectId, updateShot } = useProjects();
   const shots = useProjectShots(activeProjectId);
   const { isTablet, contentPadding } = useLayout();
-
+  const router = useRouter();
   const [collapsedScenes, setCollapsedScenes] = useState<Set<number>>(new Set());
 
   const cycleStatus = useCallback((shot: Shot) => {
@@ -68,9 +68,7 @@ export default function ShotChecklistScreen() {
     Alert.alert('Reset All Shots', 'Mark all shots as "Planned"?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Reset',
-        style: 'destructive',
-        onPress: () => {
+        text: 'Reset', style: 'destructive', onPress: () => {
           shots.forEach(shot => {
             if (shot.status !== 'planned') {
               updateShot({ ...shot, status: 'planned' });
@@ -90,7 +88,6 @@ export default function ShotChecklistScreen() {
     });
   }, []);
 
-  // Group shots by scene
   const sections = useMemo(() => {
     const sceneMap = new Map<number, Shot[]>();
     shots.forEach(shot => {
@@ -107,7 +104,6 @@ export default function ShotChecklistScreen() {
       }));
   }, [shots, collapsedScenes]);
 
-  // Stats
   const totalShots = shots.length;
   const shotCount = shots.filter(s => s.status === 'shot' || s.status === 'approved').length;
   const approvedCount = shots.filter(s => s.status === 'approved').length;
@@ -128,7 +124,6 @@ export default function ShotChecklistScreen() {
           const sceneTotal = s.allShots.length;
           const isCollapsed = collapsedScenes.has(s.sceneNumber);
           const allDone = sceneDone === sceneTotal;
-
           return (
             <TouchableOpacity
               style={[styles.sceneHeader, allDone && styles.sceneHeaderDone]}
@@ -160,7 +155,6 @@ export default function ShotChecklistScreen() {
         stickySectionHeadersEnabled={false}
         ListHeaderComponent={
           <View>
-            {/* Progress overview */}
             <View style={styles.progressCard}>
               <View style={styles.progressHeader}>
                 <Text style={styles.progressTitle}>Daily Progress</Text>
@@ -169,14 +163,10 @@ export default function ShotChecklistScreen() {
                   <Text style={styles.resetText}>Reset</Text>
                 </TouchableOpacity>
               </View>
-
-              {/* Big progress bar */}
               <View style={styles.bigProgressTrack}>
                 <View style={[styles.bigProgressFill, { width: `${progressPct}%` }]} />
               </View>
               <Text style={styles.bigProgressPct}>{progressPct}%</Text>
-
-              {/* Stats row */}
               <View style={styles.statsRow}>
                 <View style={styles.statItem}>
                   <View style={[styles.statDot, { backgroundColor: Colors.text.tertiary }]} />
@@ -196,8 +186,6 @@ export default function ShotChecklistScreen() {
                 </View>
               </View>
             </View>
-
-            {/* Tap instruction */}
             <Text style={styles.instruction}>Tap a shot to cycle: Planned → Ready → Shot → Approved</Text>
           </View>
         }
@@ -205,10 +193,18 @@ export default function ShotChecklistScreen() {
           <View style={styles.emptyContainer}>
             <Camera color={Colors.text.tertiary} size={48} />
             <Text style={styles.emptyTitle}>No shots yet</Text>
-            <Text style={styles.emptySubtitle}>Add shots from the Shots tab first</Text>
+            <Text style={styles.emptySubtitle}>Tap + to add your first shot</Text>
           </View>
         }
       />
+
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => router.push('/new-shot' as never)}
+        activeOpacity={0.8}
+      >
+        <Plus color={Colors.text.inverse} size={24} />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -216,55 +212,20 @@ export default function ShotChecklistScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg.primary },
   list: { padding: 16, paddingBottom: 100 },
-  progressCard: {
-    backgroundColor: Colors.bg.card,
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 0.5,
-    borderColor: Colors.border.subtle,
-  },
+  progressCard: { backgroundColor: Colors.bg.card, borderRadius: 14, padding: 18, marginBottom: 16, borderWidth: 0.5, borderColor: Colors.border.subtle },
   progressHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   progressTitle: { fontSize: 18, fontWeight: '700' as const, color: Colors.text.primary },
   resetBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 12, backgroundColor: Colors.bg.tertiary },
   resetText: { fontSize: 11, color: Colors.text.tertiary, fontWeight: '600' as const },
-  bigProgressTrack: {
-    height: 10,
-    backgroundColor: Colors.bg.tertiary,
-    borderRadius: 5,
-    overflow: 'hidden',
-    marginBottom: 6,
-  },
-  bigProgressFill: {
-    height: '100%',
-    backgroundColor: Colors.accent.gold,
-    borderRadius: 5,
-  },
+  bigProgressTrack: { height: 10, backgroundColor: Colors.bg.tertiary, borderRadius: 5, overflow: 'hidden', marginBottom: 6 },
+  bigProgressFill: { height: '100%', backgroundColor: Colors.accent.gold, borderRadius: 5 },
   bigProgressPct: { fontSize: 28, fontWeight: '800' as const, color: Colors.accent.gold, textAlign: 'center', marginBottom: 12 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
   statItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   statDot: { width: 8, height: 8, borderRadius: 4 },
   statText: { fontSize: 11, color: Colors.text.secondary, fontWeight: '500' as const },
-  instruction: {
-    fontSize: 11,
-    color: Colors.text.tertiary,
-    textAlign: 'center',
-    marginBottom: 16,
-    fontStyle: 'italic',
-  },
-  sceneHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: Colors.bg.secondary,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: 12,
-    marginBottom: 6,
-    borderWidth: 0.5,
-    borderColor: Colors.border.subtle,
-  },
+  instruction: { fontSize: 11, color: Colors.text.tertiary, textAlign: 'center', marginBottom: 16, fontStyle: 'italic' as const },
+  sceneHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: Colors.bg.secondary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, marginTop: 12, marginBottom: 6, borderWidth: 0.5, borderColor: Colors.border.subtle },
   sceneHeaderDone: { borderColor: '#4ADE8033' },
   sceneHeaderLeft: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12 },
   sceneTitle: { fontSize: 14, fontWeight: '700' as const, color: Colors.text.primary },
@@ -273,26 +234,9 @@ const styles = StyleSheet.create({
   sceneProgressTrack: { flex: 1, height: 4, backgroundColor: Colors.bg.tertiary, borderRadius: 2, overflow: 'hidden', maxWidth: 120 },
   sceneProgressFill: { height: '100%', backgroundColor: Colors.accent.gold, borderRadius: 2 },
   sceneProgressText: { fontSize: 11, color: Colors.text.tertiary, fontWeight: '600' as const, minWidth: 30 },
-  shotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bg.card,
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 6,
-    borderWidth: 0.5,
-    borderColor: Colors.border.subtle,
-    gap: 10,
-  },
+  shotRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.card, borderRadius: 10, padding: 12, marginBottom: 6, borderWidth: 0.5, borderColor: Colors.border.subtle, gap: 10 },
   shotRowDone: { opacity: 0.7 },
-  statusCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  statusCircle: { width: 32, height: 32, borderRadius: 16, borderWidth: 1.5, justifyContent: 'center', alignItems: 'center' },
   shotInfo: { flex: 1 },
   shotTopRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 3 },
   shotNumber: { fontSize: 14, fontWeight: '700' as const, color: Colors.text.primary },
@@ -302,14 +246,10 @@ const styles = StyleSheet.create({
   shotDesc: { fontSize: 12, color: Colors.text.secondary, lineHeight: 17 },
   shotDescDone: { color: Colors.text.tertiary },
   shotMovement: { fontSize: 10, color: Colors.accent.goldDim, fontWeight: '500' as const, marginTop: 2, textTransform: 'uppercase' as const },
-  statusTag: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 10,
-    borderWidth: 0.5,
-  },
+  statusTag: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 10, borderWidth: 0.5 },
   statusTagText: { fontSize: 9, fontWeight: '700' as const, letterSpacing: 0.5 },
   emptyContainer: { alignItems: 'center', paddingVertical: 60 },
   emptyTitle: { fontSize: 18, fontWeight: '600' as const, color: Colors.text.primary, marginTop: 16 },
   emptySubtitle: { fontSize: 14, color: Colors.text.secondary, marginTop: 4 },
+  fab: { position: 'absolute', bottom: 24, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: Colors.accent.gold, justifyContent: 'center', alignItems: 'center', shadowColor: Colors.accent.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
 });
