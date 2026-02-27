@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { Camera } from 'lucide-react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import { useProjects, useProjectLookbook } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import { pickImage } from '@/utils/imagePicker';
@@ -22,10 +22,14 @@ const SECTION_OPTIONS: { value: LookbookSectionType; label: string }[] = [
 ];
 
 export default function NewLookbookItemScreen() {
-  const { activeProjectId, addLookbookItem } = useProjects();
+  const { activeProjectId, addLookbookItem, updateLookbookItem } = useProjects();
   const existingItems = useProjectLookbook(activeProjectId);
   const router = useRouter();
   const { isTablet, contentPadding } = useLayout();
+  const params = useLocalSearchParams<{ id?: string }>();
+  const editId = params.id;
+  const existingItem = editId ? existingItems.find(i => i.id === editId) : null;
+  const isEditing = !!existingItem;
 
   const [section, setSection] = useState<LookbookSectionType>('tone');
   const [title, setTitle] = useState('');
@@ -33,6 +37,18 @@ export default function NewLookbookItemScreen() {
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   const [referenceFilm, setReferenceFilm] = useState('');
   const [colorHex, setColorHex] = useState('');
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (existingItem) {
+      setSection(existingItem.section);
+      setTitle(existingItem.title);
+      setDescription(existingItem.description);
+      setImageUrl(existingItem.imageUrl);
+      setReferenceFilm(existingItem.referenceFilm || '');
+      setColorHex(existingItem.colorHex || '');
+    }
+  }, [existingItem?.id]);
 
   const handlePickImage = async () => {
     const result = await pickImage();
@@ -45,8 +61,8 @@ export default function NewLookbookItemScreen() {
       return;
     }
 
-    const item: LookbookItem = {
-      id: Date.now().toString(),
+    const itemData: LookbookItem = {
+      id: isEditing ? existingItem!.id : Date.now().toString(),
       projectId: activeProjectId || '1',
       section,
       title: title.trim(),
@@ -54,16 +70,21 @@ export default function NewLookbookItemScreen() {
       imageUrl,
       referenceFilm: referenceFilm.trim() || undefined,
       colorHex: colorHex.trim() || undefined,
-      sortOrder: existingItems.length,
-      createdAt: new Date().toISOString(),
+      sortOrder: isEditing ? existingItem!.sortOrder : existingItems.length,
+      createdAt: isEditing ? existingItem!.createdAt : new Date().toISOString(),
     };
 
-    addLookbookItem(item);
+    if (isEditing) {
+      updateLookbookItem(itemData);
+    } else {
+      addLookbookItem(itemData);
+    }
     router.back();
   };
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <Stack.Screen options={{ title: isEditing ? 'Edit Lookbook Item' : 'New Lookbook Item' }} />
       <ScrollView
         contentContainerStyle={[styles.scrollContent, {
           paddingHorizontal: contentPadding,
@@ -76,11 +97,9 @@ export default function NewLookbookItemScreen() {
         <Text style={styles.sectionTitle}>Section</Text>
         <View style={styles.optionsGrid}>
           {SECTION_OPTIONS.map(opt => (
-            <TouchableOpacity
-              key={opt.value}
+            <TouchableOpacity key={opt.value}
               style={[styles.optionChip, section === opt.value && styles.optionChipActive]}
-              onPress={() => setSection(opt.value)}
-            >
+              onPress={() => setSection(opt.value)}>
               <Text style={[styles.optionChipText, section === opt.value && styles.optionChipTextActive]}>{opt.label}</Text>
             </TouchableOpacity>
           ))}
@@ -89,24 +108,12 @@ export default function NewLookbookItemScreen() {
         <Text style={styles.sectionTitle}>Content</Text>
 
         <Text style={styles.label}>Title *</Text>
-        <TextInput
-          style={styles.input}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="e.g. Natural Light, Long Takes"
-          placeholderTextColor={Colors.text.tertiary}
-        />
+        <TextInput style={styles.input} value={title} onChangeText={setTitle}
+          placeholder="e.g. Natural Light, Long Takes" placeholderTextColor={Colors.text.tertiary} />
 
         <Text style={styles.label}>Description</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Describe this element of your vision..."
-          placeholderTextColor={Colors.text.tertiary}
-          multiline
-          numberOfLines={5}
-        />
+        <TextInput style={[styles.input, styles.textArea]} value={description} onChangeText={setDescription}
+          placeholder="Describe this element of your vision..." placeholderTextColor={Colors.text.tertiary} multiline numberOfLines={5} />
 
         {/* Image */}
         <Text style={styles.label}>Reference Image</Text>
@@ -125,27 +132,16 @@ export default function NewLookbookItemScreen() {
         {section === 'reference-film' && (
           <>
             <Text style={styles.label}>Film Title</Text>
-            <TextInput
-              style={styles.input}
-              value={referenceFilm}
-              onChangeText={setReferenceFilm}
-              placeholder="e.g. Paris, Texas (1984)"
-              placeholderTextColor={Colors.text.tertiary}
-            />
+            <TextInput style={styles.input} value={referenceFilm} onChangeText={setReferenceFilm}
+              placeholder="e.g. Paris, Texas (1984)" placeholderTextColor={Colors.text.tertiary} />
           </>
         )}
 
         {section === 'color-palette' && (
           <>
             <Text style={styles.label}>Color Hex (e.g. #D4A76A)</Text>
-            <TextInput
-              style={styles.input}
-              value={colorHex}
-              onChangeText={setColorHex}
-              placeholder="#D4A76A"
-              placeholderTextColor={Colors.text.tertiary}
-              autoCapitalize="none"
-            />
+            <TextInput style={styles.input} value={colorHex} onChangeText={setColorHex}
+              placeholder="#D4A76A" placeholderTextColor={Colors.text.tertiary} autoCapitalize="none" />
             {colorHex.match(/^#[0-9A-Fa-f]{6}$/) && (
               <View style={[styles.colorPreview, { backgroundColor: colorHex }]} />
             )}
@@ -153,7 +149,7 @@ export default function NewLookbookItemScreen() {
         )}
 
         <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-          <Text style={styles.saveBtnText}>Add to Lookbook</Text>
+          <Text style={styles.saveBtnText}>{isEditing ? 'Save Changes' : 'Add to Lookbook'}</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -165,66 +161,20 @@ export default function NewLookbookItemScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg.primary },
   scrollContent: { padding: 16, paddingBottom: 40 },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: '700' as const,
-    color: Colors.accent.gold,
-    marginTop: 20,
-    marginBottom: 12,
-    letterSpacing: 0.3,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '600' as const,
-    color: Colors.text.secondary,
-    marginBottom: 6,
-    marginTop: 12,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 0.5,
-  },
-  input: {
-    backgroundColor: Colors.bg.card,
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 15,
-    color: Colors.text.primary,
-    borderWidth: 0.5,
-    borderColor: Colors.border.subtle,
-  },
+  sectionTitle: { fontSize: 16, fontWeight: '700' as const, color: Colors.accent.gold, marginTop: 20, marginBottom: 12, letterSpacing: 0.3 },
+  label: { fontSize: 12, fontWeight: '600' as const, color: Colors.text.secondary, marginBottom: 6, marginTop: 12, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
+  input: { backgroundColor: Colors.bg.card, borderRadius: 10, padding: 14, fontSize: 15, color: Colors.text.primary, borderWidth: 0.5, borderColor: Colors.border.subtle },
   textArea: { minHeight: 120, textAlignVertical: 'top' },
   optionsGrid: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  optionChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: Colors.bg.card,
-    borderWidth: 0.5,
-    borderColor: Colors.border.subtle,
-  },
+  optionChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.bg.card, borderWidth: 0.5, borderColor: Colors.border.subtle },
   optionChipActive: { backgroundColor: Colors.accent.goldBg, borderColor: Colors.accent.gold + '44' },
   optionChipText: { fontSize: 12, color: Colors.text.secondary, fontWeight: '500' as const },
   optionChipTextActive: { color: Colors.accent.gold, fontWeight: '600' as const },
   imagePicker: { marginTop: 4 },
   imagePreview: { width: '100%', height: 200, borderRadius: 12 },
-  imagePlaceholder: {
-    width: '100%',
-    height: 120,
-    borderRadius: 12,
-    backgroundColor: Colors.bg.card,
-    borderWidth: 1,
-    borderColor: Colors.border.subtle,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  imagePlaceholder: { width: '100%', height: 120, borderRadius: 12, backgroundColor: Colors.bg.card, borderWidth: 1, borderColor: Colors.border.subtle, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
   imagePlaceholderText: { fontSize: 12, color: Colors.text.tertiary, marginTop: 6 },
   colorPreview: { width: '100%', height: 40, borderRadius: 8, marginTop: 8 },
-  saveBtn: {
-    backgroundColor: Colors.accent.gold,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    marginTop: 24,
-  },
+  saveBtn: { backgroundColor: Colors.accent.gold, borderRadius: 12, padding: 16, alignItems: 'center', marginTop: 24 },
   saveBtnText: { fontSize: 16, fontWeight: '700' as const, color: Colors.text.inverse },
 });
