@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { Stack, useRouter, useLocalSearchParams } from 'expo-router';
 import {
-  Upload, FileSpreadsheet, ArrowRight, ArrowLeft, Check, X,
+  Upload, FileSpreadsheet, ArrowRight, ArrowLeft, Check, X, Download,
   AlertCircle, ChevronDown, CheckCircle2, Columns, RefreshCw,
 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
@@ -26,6 +26,8 @@ import { useProjects } from '@/contexts/ProjectContext';
 import { pickAndParseSpreadsheet, ParsedSpreadsheet } from '@/utils/spreadsheetParser';
 import { autoMapColumns, updateMapping, convertRows, ColumnMapping, MappingResult, FieldDefinition } from '@/utils/fieldMapper';
 import { getEntityConfig, EntityConfig } from '@/utils/importRegistry';
+import { shareCSVTemplate } from '@/utils/csvTemplates';
+import { recordImport } from '@/utils/importHistory';
 
 type Step = 'pick' | 'map' | 'confirm';
 
@@ -106,12 +108,14 @@ export default function ImportDataScreen() {
         return;
       }
 
+      let itemsWithMeta: Record<string, unknown>[] | null = null;
+
       // Check for addBulk first, fall back to individual adds
       const bulkAddFn = (projects as Record<string, unknown>)[entityConfig.addMethod + 'Bulk'] as ((items: Record<string, unknown>[]) => void) | undefined;
 
       if (bulkAddFn) {
         // Use bulk add if available
-        const itemsWithMeta = convertedRows.map((row, i) => ({
+        itemsWithMeta = convertedRows.map((row, i) => ({
           id: `import-${Date.now()}-${i}`,
           projectId,
           ...row,
@@ -137,6 +141,19 @@ export default function ImportDataScreen() {
           }
         }
       }
+
+      // Record import for undo
+      const importedIds = itemsWithMeta
+        ? itemsWithMeta.map((item: Record<string, unknown>) => item.id as string)
+        : convertedRows.map((_, i) => `import-${Date.now()}-${i}`);
+      await recordImport({
+        entityKey: entityConfig.key,
+        entityLabel: entityConfig.label,
+        itemIds: importedIds,
+        count: convertedRows.length,
+        method: 'spreadsheet',
+        fileName: parsedData?.fileName,
+      });
 
       Alert.alert(
         'Import Complete',
@@ -285,6 +302,18 @@ function PickStep({ entityConfig, loading, onPickFile }: {
             </View>
           ))}
         </View>
+
+        {/* Download template */}
+        <TouchableOpacity
+          style={styles.templateBtn}
+          onPress={() => shareCSVTemplate(entityConfig.key).catch(e =>
+            Alert.alert('Error', e instanceof Error ? e.message : 'Could not share template')
+          )}
+          activeOpacity={0.7}
+        >
+          <Download color={Colors.accent.gold} size={14} />
+          <Text style={styles.templateBtnText}>Download CSV Template</Text>
+        </TouchableOpacity>
 
         {/* Field info */}
         <View style={styles.fieldsInfoCard}>
@@ -694,6 +723,13 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.bg.card, borderWidth: 0.5, borderColor: Colors.border.subtle,
   },
   formatBadgeText: { fontSize: 11, fontWeight: '600' as const, color: Colors.text.tertiary },
+  templateBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    paddingVertical: 10, paddingHorizontal: 16, borderRadius: 8,
+    backgroundColor: Colors.bg.card, borderWidth: 0.5, borderColor: Colors.accent.gold + '33',
+    marginTop: 4,
+  },
+  templateBtnText: { fontSize: 12, fontWeight: '600' as const, color: Colors.accent.gold },
   fieldsInfoCard: {
     width: '100%', marginTop: 16, padding: 16, borderRadius: 12,
     backgroundColor: Colors.bg.card, borderWidth: 0.5, borderColor: Colors.border.subtle,

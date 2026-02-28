@@ -30,6 +30,7 @@ import { useProjects } from '@/contexts/ProjectContext';
 import { getEntityConfig, EntityConfig } from '@/utils/importRegistry';
 import { buildAIPrompt, parseAIResponse } from '@/utils/aiImport';
 import { sendCompletion, getApiKey, saveApiKey, hasApiKey } from '@/utils/anthropicClient';
+import { recordImport } from '@/utils/importHistory';
 
 type Step = 'input' | 'review';
 
@@ -200,6 +201,15 @@ export default function AIImportScreen() {
         setImporting(false);
         return;
       }
+
+      // Record import for undo
+      await recordImport({
+        entityKey: entityConfig.key,
+        entityLabel: entityConfig.label,
+        itemIds: itemsWithMeta.map(item => item.id as string),
+        count: parsedRows.length,
+        method: 'ai',
+      });
 
       Alert.alert(
         'Import Complete',
