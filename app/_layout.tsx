@@ -179,6 +179,10 @@ function RootLayoutNav() {
         name="import-data"
         options={{ presentation: "modal", title: "Import Data" }}
       />
+      <Stack.Screen
+        name="ai-import"
+        options={{ presentation: "modal", title: "AI Import" }}
+      />
     </Stack>
   );
 }
