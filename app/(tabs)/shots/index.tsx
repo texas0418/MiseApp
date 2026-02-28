@@ -7,6 +7,7 @@ import { useProjects, useProjectShots } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
+import AIImportButton from '@/components/AIImportButton';
 import { Shot, ShotStatus } from '@/types';
 
 const STATUS_CONFIG: Record<ShotStatus, { icon: React.ElementType; color: string; label: string }> = {
@@ -168,7 +169,8 @@ export default function ShotsScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={{ position: 'absolute', top: 14, right: 20, zIndex: 10 }}><ImportButton entityKey="shots" variant="compact" /></View>
+      <View style={{ position: 'absolute', top: 14, right: 20, zIndex: 10 }}><ImportButton entityKey="shots" variant="compact" />
+        <AIImportButton entityKey="shots" variant="compact" /></View>
       <View style={styles.statsRow}>
         <View style={styles.statItem}><Text style={styles.statValue}>{stats.total}</Text><Text style={styles.statLabel}>Total</Text></View>
         <View style={styles.statDivider} />

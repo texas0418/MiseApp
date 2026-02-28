@@ -6,6 +6,7 @@ import { useProjects, useProjectVFX } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
+import AIImportButton from '@/components/AIImportButton';
 import { VFXShot, VFXShotStatus, VFXComplexity } from '@/types';
 
 const STATUS_CONFIG: Record<VFXShotStatus, { color: string; label: string }> = {
@@ -224,7 +225,8 @@ export default function VFXTrackerScreen() {
         }
       />
 
-            <View style={{ position: 'absolute', top: 80, right: 24, zIndex: 10 }}><ImportButton entityKey="vfx" variant="compact" /></View>
+            <View style={{ position: 'absolute', top: 80, right: 24, zIndex: 10 }}><ImportButton entityKey="vfx" variant="compact" />
+        <AIImportButton entityKey="vfx" variant="compact" /></View>
 
 <TouchableOpacity style={styles.fab} onPress={() => router.push('/new-vfx' as never)} activeOpacity={0.8}>
         <Plus color={Colors.text.inverse} size={24} />

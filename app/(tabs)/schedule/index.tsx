@@ -7,6 +7,7 @@ import { useProjects, useProjectSchedule } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
+import AIImportButton from '@/components/AIImportButton';
 import { ScheduleDay } from '@/types';
 
 function ScheduleCard({ day, onDelete }: { day: ScheduleDay; onDelete: () => void }) {
@@ -189,7 +190,8 @@ export default function ScheduleScreen() {
         }
       />
 
-            <View style={{ position: 'absolute', top: 80, right: 24, zIndex: 10 }}><ImportButton entityKey="schedule" variant="compact" /></View>
+            <View style={{ position: 'absolute', top: 80, right: 24, zIndex: 10 }}><ImportButton entityKey="schedule" variant="compact" />
+        <AIImportButton entityKey="schedule" variant="compact" /></View>
 
 <TouchableOpacity
         style={styles.fab}
