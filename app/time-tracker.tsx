@@ -5,6 +5,7 @@ import { Plus, Clock, AlertCircle, AlertTriangle, ChevronDown, ChevronUp, Pencil
 import { useProjects, useProjectTimeEntries } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { TimeEntry } from '@/types';
 
 const DEPT_COLORS: Record<string, string> = {
@@ -183,7 +184,9 @@ export default function TimeTrackerScreen() {
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('/new-time-entry' as never)} activeOpacity={0.8}>
+            <View style={{ position: 'absolute', top: 80, right: 24, zIndex: 10 }}><ImportButton entityKey="timeEntries" variant="compact" /></View>
+
+<TouchableOpacity style={styles.fab} onPress={() => router.push('/new-time-entry' as never)} activeOpacity={0.8}>
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>

@@ -5,6 +5,7 @@ import { Plus, FileText, Clock, MessageSquare, Camera, Users, ChevronDown, Chevr
 import { useProjects, useProjectScriptSides, useProjectShots } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { ScriptSide, SidesStatus, SideAnnotation } from '@/types';
 
 const STATUS_CONFIG: Record<SidesStatus, { label: string; color: string; bg: string }> = {
@@ -253,6 +254,7 @@ export default function ScriptSidesScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
+      <View style={{ position: 'absolute', top: 10, right: 16, zIndex: 10 }}><ImportButton entityKey="scriptSides" variant="compact" /></View>
             <View style={styles.statsBar}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{sides.length}</Text>

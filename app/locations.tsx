@@ -6,6 +6,7 @@ import { Plus, MapPin, Star, Zap, Phone, AlertCircle, Shield, ChevronDown, Chevr
 import { useProjects, useProjectLocations } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { LocationScout } from '@/types';
 
 function LocationCard({ item, isExpanded, onPress, onEdit, onDelete }: {
@@ -170,6 +171,7 @@ export default function LocationsScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Locations' }} />
 
+      <View style={{ position: 'absolute', top: 10, right: 16, zIndex: 10 }}><ImportButton entityKey="locations" variant="compact" /></View>
       <View style={styles.statsBar}>
         <MapPin color={Colors.accent.gold} size={16} />
         <Text style={styles.statsText}>{locations.length} location{locations.length !== 1 ? 's' : ''}</Text>

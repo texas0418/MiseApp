@@ -6,6 +6,7 @@ import { Swipeable } from 'react-native-gesture-handler';
 import { useProjects, useProjectSchedule } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { ScheduleDay } from '@/types';
 
 function ScheduleCard({ day, onDelete }: { day: ScheduleDay; onDelete: () => void }) {
@@ -188,7 +189,9 @@ export default function ScheduleScreen() {
         }
       />
 
-      <TouchableOpacity
+            <View style={{ position: 'absolute', top: 80, right: 24, zIndex: 10 }}><ImportButton entityKey="schedule" variant="compact" /></View>
+
+<TouchableOpacity
         style={styles.fab}
         onPress={() => router.push('/new-schedule-day' as never)}
         activeOpacity={0.8}

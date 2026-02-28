@@ -5,6 +5,7 @@ import { Plus, FileText, MapPin, Clock, Users, Package, AlertCircle, ChevronDown
 import { useProjects, useProjectBreakdowns } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { SceneBreakdown } from '@/types';
 
 const TIME_COLORS: Record<string, string> = {
@@ -179,6 +180,7 @@ export default function ScriptBreakdownScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Script Breakdown' }} />
 
+      <View style={{ position: 'absolute', top: 10, right: 16, zIndex: 10 }}><ImportButton entityKey="sceneBreakdowns" variant="compact" /></View>
       <View style={styles.statsBar}>
         <FileText color={Colors.accent.gold} size={16} />
         <Text style={styles.statsText}>{stats.scenes} scenes</Text>

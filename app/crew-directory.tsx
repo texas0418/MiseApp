@@ -5,6 +5,7 @@ import { Phone, Mail, Users, Plus, ChevronDown, ChevronUp, Pencil, Trash2, Searc
 import { useProjects } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { CrewMember, Department } from '@/types';
 
 const DEPT_LABELS: Record<Department, string> = {
@@ -191,6 +192,7 @@ export default function CrewDirectoryScreen() {
         <Users color={Colors.accent.gold} size={16} />
         <Text style={styles.statsText}>{crew.length} member{crew.length !== 1 ? 's' : ''}</Text>
         <Text style={styles.statsDetail}>{Object.keys(deptCounts).length} dept{Object.keys(deptCounts).length !== 1 ? 's' : ''}</Text>
+        <ImportButton entityKey="crew" variant="compact" />
       </View>
 
       <FlatList

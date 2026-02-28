@@ -5,6 +5,7 @@ import { Plus, Trophy, AlertCircle, Calendar, DollarSign, ChevronDown, ChevronUp
 import { useProjects, useProjectFestivals } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { FestivalSubmission, FestivalStatus } from '@/types';
 
 const STATUS_CONFIG: Record<FestivalStatus, { color: string; label: string }> = {
@@ -151,7 +152,9 @@ export default function FestivalTrackerScreen() {
         showsVerticalScrollIndicator={false}
         ListEmptyComponent={<View style={styles.emptyInner}><Trophy color={Colors.text.tertiary} size={48} /><Text style={styles.emptyTitle}>No festivals tracked</Text><Text style={styles.emptySubtitle}>Track your festival submission strategy</Text></View>}
       />
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('/new-festival' as never)} activeOpacity={0.8}><Plus color={Colors.text.inverse} size={24} /></TouchableOpacity>
+            <View style={{ position: 'absolute', top: 80, right: 24, zIndex: 10 }}><ImportButton entityKey="festivals" variant="compact" /></View>
+
+<TouchableOpacity style={styles.fab} onPress={() => router.push('/new-festival' as never)} activeOpacity={0.8}><Plus color={Colors.text.inverse} size={24} /></TouchableOpacity>
     </View>
   );
 }

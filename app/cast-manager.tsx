@@ -6,6 +6,7 @@ import { Plus, User, Phone, Mail, Film, Calendar, Star, Trash2, ChevronDown, Che
 import { useProjects, useProjectCast } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { CastMember, CastStatus } from '@/types';
 
 const STATUS_CONFIG: Record<CastStatus, { label: string; color: string }> = {
@@ -258,6 +259,7 @@ export default function CastManagerScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <View>
+      <View style={{ position: 'absolute', top: 10, right: 16, zIndex: 10 }}><ImportButton entityKey="cast" variant="compact" /></View>
             <View style={styles.statsBar}>
               <View style={styles.statItem}>
                 <Text style={styles.statValue}>{cast.length}</Text>

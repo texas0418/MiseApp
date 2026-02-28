@@ -5,6 +5,7 @@ import { Plus, BookOpen, AlertCircle, ChevronDown, ChevronUp, Pencil, Trash2, Ca
 import { useProjects, useProjectContinuity } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { ContinuityNote } from '@/types';
 
 function ContinuityCard({ item, isExpanded, onPress, onEdit, onDelete }: {
@@ -113,6 +114,7 @@ export default function ContinuityScreen() {
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Continuity Notes' }} />
 
+      <View style={{ position: 'absolute', top: 10, right: 16, zIndex: 10 }}><ImportButton entityKey="continuity" variant="compact" /></View>
       <View style={styles.statsBar}>
         <BookOpen color={Colors.accent.gold} size={16} />
         <Text style={styles.statsText}>{notes.length} note{notes.length !== 1 ? 's' : ''}</Text>

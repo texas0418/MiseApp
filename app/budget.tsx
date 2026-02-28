@@ -5,6 +5,7 @@ import { Plus, DollarSign, AlertCircle, Check, Clock, ChevronDown, ChevronUp, Pe
 import { useProjects, useProjectBudget } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { BudgetItem, BudgetCategory } from '@/types';
 
 const CATEGORY_COLORS: Record<BudgetCategory, string> = {
@@ -263,6 +264,7 @@ export default function BudgetScreen() {
               <View style={styles.progressBg}>
                 <View style={[styles.progressFill, { width: `${spentPercent}%` as unknown as number, backgroundColor: spentPercent > 90 ? Colors.status.error : spentPercent > 70 ? Colors.status.warning : Colors.accent.gold }]} />
               </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}><ImportButton entityKey="budget" /></View>
               <Text style={styles.progressText}>{spentPercent.toFixed(0)}% of budget used · {budget.length} items</Text>
             </View>
 

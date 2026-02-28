@@ -5,6 +5,7 @@ import { Plus, Sparkles, AlertCircle, ChevronDown, ChevronUp, Pencil, Trash2 } f
 import { useProjects, useProjectVFX } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import ImportButton from '@/components/ImportButton';
 import { VFXShot, VFXShotStatus, VFXComplexity } from '@/types';
 
 const STATUS_CONFIG: Record<VFXShotStatus, { color: string; label: string }> = {
@@ -223,7 +224,9 @@ export default function VFXTrackerScreen() {
         }
       />
 
-      <TouchableOpacity style={styles.fab} onPress={() => router.push('/new-vfx' as never)} activeOpacity={0.8}>
+            <View style={{ position: 'absolute', top: 80, right: 24, zIndex: 10 }}><ImportButton entityKey="vfx" variant="compact" /></View>
+
+<TouchableOpacity style={styles.fab} onPress={() => router.push('/new-vfx' as never)} activeOpacity={0.8}>
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
