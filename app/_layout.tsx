@@ -14,25 +14,31 @@ const queryClient = new QueryClient();
 function RootLayoutNav() {
   const router = useRouter();
   const segments = useSegments();
-  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
 
+  // Re-check onboarding state whenever route segments change
   useEffect(() => {
+    let mounted = true;
     hasCompletedOnboarding().then((completed) => {
-      setNeedsOnboarding(!completed);
-      setOnboardingChecked(true);
+      if (mounted) {
+        setNeedsOnboarding(!completed);
+        setInitialCheckDone(true);
+      }
     });
-  }, []);
+    return () => { mounted = false; };
+  }, [segments]);
 
   useEffect(() => {
-    if (!onboardingChecked) return;
+    if (!initialCheckDone) return;
 
     const inOnboarding = segments[0] === 'onboarding';
 
+    // Only redirect to onboarding if needed and not already there
     if (needsOnboarding && !inOnboarding) {
       router.replace('/onboarding' as never);
     }
-  }, [onboardingChecked, needsOnboarding, segments]);
+  }, [initialCheckDone, needsOnboarding, segments]);
 
   return (
     <Stack
