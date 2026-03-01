@@ -1,16 +1,39 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import Colors from "@/constants/colors";
+import { hasCompletedOnboarding } from "@/utils/onboarding";
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
+  const router = useRouter();
+  const segments = useSegments();
+  const [onboardingChecked, setOnboardingChecked] = useState(false);
+  const [needsOnboarding, setNeedsOnboarding] = useState(false);
+
+  useEffect(() => {
+    hasCompletedOnboarding().then((completed) => {
+      setNeedsOnboarding(!completed);
+      setOnboardingChecked(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!onboardingChecked) return;
+
+    const inOnboarding = segments[0] === 'onboarding';
+
+    if (needsOnboarding && !inOnboarding) {
+      router.replace('/onboarding' as never);
+    }
+  }, [onboardingChecked, needsOnboarding, segments]);
+
   return (
     <Stack
       screenOptions={{
@@ -21,6 +44,10 @@ function RootLayoutNav() {
         contentStyle: { backgroundColor: Colors.bg.primary },
       }}
     >
+      <Stack.Screen
+        name="onboarding"
+        options={{ headerShown: false, gestureEnabled: false }}
+      />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="project-detail" options={{ title: "Project" }} />
       <Stack.Screen
