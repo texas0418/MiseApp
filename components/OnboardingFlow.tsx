@@ -1,16 +1,8 @@
 /**
- * app/onboarding.tsx
+ * components/OnboardingFlow.tsx
  * 
- * First-launch onboarding walkthrough for Mise App.
- * 
- * 5 slides introducing the app's key capabilities:
- * 1. Welcome — what Mise is
- * 2. Projects — organize your films
- * 3. Shot List & Schedule — plan your shoot
- * 4. On-Set Tools — production day companion
- * 5. Get Started — create your first project
- * 
- * Swipeable with dot indicators, skip button, and a final CTA.
+ * Full-screen onboarding walkthrough rendered as an overlay.
+ * No routing — just a callback when done.
  */
 
 import React, { useState, useRef, useCallback } from 'react';
@@ -18,17 +10,17 @@ import {
   View, Text, StyleSheet, TouchableOpacity, Dimensions,
   FlatList, Animated, NativeSyntheticEvent, NativeScrollEvent,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import {
   Clapperboard, Camera, CalendarDays, Wrench, ArrowRight,
   Film, ListChecks, Clock, Upload, Sparkles, ChevronRight,
 } from 'lucide-react-native';
 import Colors from '@/constants/colors';
-import { completeOnboarding } from '@/utils/onboarding';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-// ─── Slide Data ──────────────────────────────────────────────────
+interface Props {
+  onComplete: () => void;
+}
 
 interface OnboardingSlide {
   id: string;
@@ -98,10 +90,7 @@ const SLIDES: OnboardingSlide[] = [
   },
 ];
 
-// ─── Main Component ──────────────────────────────────────────────
-
-export default function OnboardingScreen() {
-  const router = useRouter();
+export default function OnboardingFlow({ onComplete }: Props) {
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -123,23 +112,13 @@ export default function OnboardingScreen() {
     }
   }, [currentIndex]);
 
-  const handleFinish = useCallback(async () => {
-    await completeOnboarding();
-    router.replace('/(tabs)/(home)' as never);
-  }, [router]);
-
-  const handleSkip = useCallback(async () => {
-    await completeOnboarding();
-    router.replace('/(tabs)/(home)' as never);
-  }, [router]);
-
   const isLastSlide = currentIndex === SLIDES.length - 1;
 
   return (
     <View style={styles.container}>
       {/* Skip button */}
       {!isLastSlide && (
-        <TouchableOpacity style={styles.skipBtn} onPress={handleSkip} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.skipBtn} onPress={onComplete} activeOpacity={0.7}>
           <Text style={styles.skipText}>Skip</Text>
         </TouchableOpacity>
       )}
@@ -188,7 +167,7 @@ export default function OnboardingScreen() {
 
         {/* Action button */}
         {isLastSlide ? (
-          <TouchableOpacity style={styles.startBtn} onPress={handleFinish} activeOpacity={0.8}>
+          <TouchableOpacity style={styles.startBtn} onPress={onComplete} activeOpacity={0.8}>
             <Text style={styles.startBtnText}>Get Started</Text>
             <ArrowRight color={Colors.text.inverse} size={20} />
           </TouchableOpacity>
@@ -227,19 +206,16 @@ function SlideView({ slide, index, scrollX }: {
   return (
     <View style={[styles.slide, { width: SCREEN_WIDTH }]}>
       <Animated.View style={[styles.slideContent, { opacity, transform: [{ scale }] }]}>
-        {/* Icon */}
         <View style={[styles.iconContainer, { borderColor: slide.iconColor + '33' }]}>
           <View style={[styles.iconCircle, { backgroundColor: slide.iconColor + '15' }]}>
             <Icon color={slide.iconColor} size={40} />
           </View>
         </View>
 
-        {/* Text */}
         <Text style={styles.slideSubtitle}>{slide.subtitle}</Text>
         <Text style={styles.slideTitle}>{slide.title}</Text>
         <Text style={styles.slideDescription}>{slide.description}</Text>
 
-        {/* Feature pills */}
         {slide.features && (
           <View style={styles.featureList}>
             {slide.features.map((feature, i) => {
@@ -258,161 +234,25 @@ function SlideView({ slide, index, scrollX }: {
   );
 }
 
-// ─── Styles ──────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bg.primary,
-  },
-
-  // Skip
-  skipBtn: {
-    position: 'absolute',
-    top: 60,
-    right: 24,
-    zIndex: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  skipText: {
-    fontSize: 15,
-    color: Colors.text.tertiary,
-    fontWeight: '500',
-  },
-
-  // Slides
-  slide: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  slideContent: {
-    alignItems: 'center',
-    maxWidth: 400,
-  },
-
-  // Icon
-  iconContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 32,
-  },
-  iconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-
-  // Text
-  slideSubtitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: Colors.accent.gold,
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-    marginBottom: 8,
-  },
-  slideTitle: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: Colors.text.primary,
-    textAlign: 'center',
-    letterSpacing: -0.5,
-    marginBottom: 12,
-  },
-  slideDescription: {
-    fontSize: 15,
-    color: Colors.text.secondary,
-    textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 8,
-  },
-
-  // Features
-  featureList: {
-    marginTop: 28,
-    gap: 10,
-    width: '100%',
-  },
-  featurePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: Colors.bg.card,
-    borderWidth: 0.5,
-    borderColor: Colors.border.subtle,
-  },
-  featurePillText: {
-    fontSize: 14,
-    color: Colors.text.primary,
-    fontWeight: '500',
-  },
-
-  // Bottom section
-  bottomSection: {
-    paddingBottom: 50,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-    gap: 24,
-  },
-
-  // Dots
-  dotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.accent.gold,
-  },
-
-  // Buttons
-  nextBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: Colors.accent.gold + '44',
-    backgroundColor: Colors.accent.goldBg,
-  },
-  nextBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: Colors.accent.gold,
-  },
-  startBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingVertical: 16,
-    paddingHorizontal: 36,
-    borderRadius: 14,
-    backgroundColor: Colors.accent.gold,
-    shadowColor: Colors.accent.gold,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  startBtnText: {
-    fontSize: 17,
-    fontWeight: '800',
-    color: Colors.text.inverse,
-  },
+  container: { flex: 1, backgroundColor: Colors.bg.primary },
+  skipBtn: { position: 'absolute', top: 60, right: 24, zIndex: 10, paddingVertical: 8, paddingHorizontal: 16 },
+  skipText: { fontSize: 15, color: Colors.text.tertiary, fontWeight: '500' },
+  slide: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+  slideContent: { alignItems: 'center', maxWidth: 400 },
+  iconContainer: { width: 100, height: 100, borderRadius: 30, borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', marginBottom: 32 },
+  iconCircle: { width: 80, height: 80, borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
+  slideSubtitle: { fontSize: 12, fontWeight: '700', color: Colors.accent.gold, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 8 },
+  slideTitle: { fontSize: 28, fontWeight: '800', color: Colors.text.primary, textAlign: 'center', letterSpacing: -0.5, marginBottom: 12 },
+  slideDescription: { fontSize: 15, color: Colors.text.secondary, textAlign: 'center', lineHeight: 22, paddingHorizontal: 8 },
+  featureList: { marginTop: 28, gap: 10, width: '100%' },
+  featurePill: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, backgroundColor: Colors.bg.card, borderWidth: 0.5, borderColor: Colors.border.subtle },
+  featurePillText: { fontSize: 14, color: Colors.text.primary, fontWeight: '500' },
+  bottomSection: { paddingBottom: 50, paddingHorizontal: 24, alignItems: 'center', gap: 24 },
+  dotRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  dot: { height: 8, borderRadius: 4, backgroundColor: Colors.accent.gold },
+  nextBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 12, borderWidth: 1.5, borderColor: Colors.accent.gold + '44', backgroundColor: Colors.accent.goldBg },
+  nextBtnText: { fontSize: 16, fontWeight: '700', color: Colors.accent.gold },
+  startBtn: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 16, paddingHorizontal: 36, borderRadius: 14, backgroundColor: Colors.accent.gold, shadowColor: Colors.accent.gold, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8 },
+  startBtnText: { fontSize: 17, fontWeight: '800', color: Colors.text.inverse },
 });
