@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useProjects, useProjectSchedule } from '@/contexts/ProjectContext';
 import Colors from '@/constants/colors';
+import { scheduleNotificationsForDay } from '@/utils/notifications';
 
 export default function NewScheduleDayScreen() {
   const router = useRouter();
@@ -64,7 +65,9 @@ export default function NewScheduleDayScreen() {
     } else {
       addScheduleDay(data);
     }
-    router.back();
+    // Schedule notifications for new day
+      // scheduleNotificationsForDay(newDay, activeProject?.title).catch(() => {});
+      router.back();
   }, [activeProjectId, date, scenes, location, callTime, wrapTime, notes, nextDayNumber, addScheduleDay, updateScheduleDay, router, isEditing, existingItem]);
 
   if (!activeProject) {

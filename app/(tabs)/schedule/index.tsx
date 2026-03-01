@@ -8,6 +8,8 @@ import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
+import NotificationSettings from '@/components/NotificationSettings';
+import { rescheduleAll } from '@/utils/notifications';
 import { ScheduleDay } from '@/types';
 
 function ScheduleCard({ day, onDelete }: { day: ScheduleDay; onDelete: () => void }) {
@@ -181,6 +183,11 @@ export default function ScheduleScreen() {
           },
         ]}
         showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <View style={{ marginBottom: 12 }}>
+            <NotificationSettings onPrefsChanged={() => rescheduleAll(schedule, activeProject?.title)} />
+          </View>
+        }
         ListEmptyComponent={
           <View style={styles.emptyInner}>
             <CalendarDays color={Colors.text.tertiary} size={48} />
