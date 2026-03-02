@@ -5,6 +5,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ProjectProvider } from "@/contexts/ProjectContext";
+import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
 import Colors from "@/constants/colors";
 import {
   hasCompletedOnboarding,
@@ -39,6 +40,7 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <ProjectProvider>
+          <SubscriptionProvider>
           {showOnboarding ? (
             <OnboardingFlow onComplete={handleOnboardingComplete} />
           ) : (
@@ -273,8 +275,13 @@ export default function RootLayout() {
                 name="ai-import"
                 options={{ presentation: "modal", title: "AI Import" }}
               />
+              <Stack.Screen
+                name="paywall"
+                options={{ presentation: "modal", headerShown: false }}
+              />
             </Stack>
           )}
+          </SubscriptionProvider>
         </ProjectProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>

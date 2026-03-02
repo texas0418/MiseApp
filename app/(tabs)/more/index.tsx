@@ -1,13 +1,15 @@
 import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   FileText, MapPin, DollarSign, Clapperboard, BookOpen, BookOpenCheck,
   Aperture, Sparkles, Trophy, Palette, StickyNote,
   ClipboardList, User, Users, Layers, Image, CloudSun,
-  Share2, Move, Paintbrush, Clock, Drama, ListChecks, BookHeart, Star as StarIcon, Megaphone
+  Share2, Move, Paintbrush, Clock, Drama, ListChecks, BookHeart, Star as StarIcon, Megaphone,
+  Crown, Shield, ExternalLink, RotateCcw
 } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 
@@ -109,6 +111,8 @@ function ToolSection({ title, tools }: { title: string; tools: ToolItem[] }) {
 
 export default function MoreScreen() {
   const { activeProject } = useProjects();
+  const { isPro } = useSubscription();
+  const router = useRouter();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -123,6 +127,67 @@ export default function MoreScreen() {
       <ToolSection title="On Set" tools={ON_SET_TOOLS} />
       <ToolSection title="Post-Production" tools={POST_TOOLS} />
       <ToolSection title="Reference & Profile" tools={REFERENCE_TOOLS} />
+
+      {/* Subscription & Settings Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Account</Text>
+        
+        {/* Pro Status / Upgrade */}
+        <TouchableOpacity
+          style={styles.subscriptionCard}
+          onPress={() => router.push('/paywall' as never)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.subIconWrap, isPro ? styles.subIconPro : styles.subIconFree]}>
+            <Crown color={isPro ? Colors.accent.gold : Colors.text.tertiary} size={22} />
+          </View>
+          <View style={styles.subTextWrap}>
+            <Text style={styles.subTitle}>{isPro ? 'Mise Pro' : 'Upgrade to Pro'}</Text>
+            <Text style={styles.subSubtitle}>
+              {isPro ? 'All premium features unlocked' : 'Unlock import, AI tools & more'}
+            </Text>
+          </View>
+          {!isPro && (
+            <View style={styles.proBadge}>
+              <Text style={styles.proBadgeText}>PRO</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+
+        {/* Manage Subscription (if Pro) */}
+        {isPro && (
+          <TouchableOpacity
+            style={styles.settingsRow}
+            onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}
+            activeOpacity={0.7}
+          >
+            <Shield color={Colors.text.secondary} size={18} />
+            <Text style={styles.settingsRowText}>Manage Subscription</Text>
+            <ExternalLink color={Colors.text.tertiary} size={14} />
+          </TouchableOpacity>
+        )}
+
+        {/* Restore Purchases */}
+        <TouchableOpacity
+          style={styles.settingsRow}
+          onPress={() => router.push('/paywall' as never)}
+          activeOpacity={0.7}
+        >
+          <RotateCcw color={Colors.text.secondary} size={18} />
+          <Text style={styles.settingsRowText}>Restore Purchases</Text>
+        </TouchableOpacity>
+
+        {/* Privacy Policy */}
+        <TouchableOpacity
+          style={styles.settingsRow}
+          onPress={() => Linking.openURL('https://texas0418.github.io/MiseApp/')}
+          activeOpacity={0.7}
+        >
+          <Shield color={Colors.text.secondary} size={18} />
+          <Text style={styles.settingsRowText}>Privacy Policy</Text>
+          <ExternalLink color={Colors.text.tertiary} size={14} />
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -208,5 +273,69 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: Colors.text.tertiary,
     marginTop: 1,
+  },
+  // Subscription section
+  subscriptionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.bg.card,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 0.5,
+    borderColor: Colors.border.subtle,
+    gap: 12,
+    marginBottom: 8,
+  },
+  subIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  subIconPro: {
+    backgroundColor: Colors.accent.goldBg,
+  },
+  subIconFree: {
+    backgroundColor: Colors.bg.tertiary,
+  },
+  subTextWrap: {
+    flex: 1,
+  },
+  subTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.text.primary,
+  },
+  subSubtitle: {
+    fontSize: 11,
+    color: Colors.text.tertiary,
+    marginTop: 2,
+  },
+  proBadge: {
+    backgroundColor: Colors.accent.gold,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  proBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: Colors.text.inverse,
+    letterSpacing: 0.5,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 12,
+    borderBottomWidth: 0.5,
+    borderBottomColor: Colors.border.subtle,
+  },
+  settingsRowText: {
+    flex: 1,
+    fontSize: 14,
+    color: Colors.text.primary,
   },
 });

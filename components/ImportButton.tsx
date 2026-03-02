@@ -2,17 +2,18 @@
  * components/ImportButton.tsx
  * 
  * Reusable Import Button for Mise App
- * Phase 2, Item 6
+ * Phase 2, Item 6 — Updated with Pro subscription gating
  * 
  * A small button (Upload icon + "Import" label) that navigates to the
- * import-data screen with the target entity type. Drop this into any
- * tool screen's header area or empty state.
+ * import-data screen with the target entity type. If the user doesn't
+ * have a Pro subscription, it redirects to the paywall instead.
  */
 
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Upload } from 'lucide-react-native';
+import { Upload, Lock } from 'lucide-react-native';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import Colors from '@/constants/colors';
 
 interface ImportButtonProps {
@@ -26,33 +27,52 @@ interface ImportButtonProps {
 
 export default function ImportButton({ entityKey, variant = 'full', label = 'Import' }: ImportButtonProps) {
   const router = useRouter();
+  const { requiresPro } = useSubscription();
+  const needsPro = requiresPro('spreadsheet_import');
 
   const handlePress = () => {
-    router.push(`/import-data?entity=${entityKey}` as never);
+    if (needsPro) {
+      router.push('/paywall' as never);
+    } else {
+      router.push(`/import-data?entity=${entityKey}` as never);
+    }
   };
 
   if (variant === 'compact') {
     return (
       <TouchableOpacity
-        style={styles.compactBtn}
+        style={[styles.compactBtn, needsPro && styles.lockedBtn]}
         onPress={handlePress}
         activeOpacity={0.7}
         testID={`import-btn-${entityKey}`}
       >
-        <Upload color={Colors.accent.gold} size={16} />
+        {needsPro ? (
+          <Lock color={Colors.text.tertiary} size={14} />
+        ) : (
+          <Upload color={Colors.accent.gold} size={16} />
+        )}
       </TouchableOpacity>
     );
   }
 
   return (
     <TouchableOpacity
-      style={styles.fullBtn}
+      style={[styles.fullBtn, needsPro && styles.lockedBtn]}
       onPress={handlePress}
       activeOpacity={0.7}
       testID={`import-btn-${entityKey}`}
     >
-      <Upload color={Colors.accent.gold} size={14} />
-      <Text style={styles.fullBtnText}>{label}</Text>
+      {needsPro ? (
+        <>
+          <Lock color={Colors.text.tertiary} size={12} />
+          <Text style={[styles.fullBtnText, styles.lockedText]}>{label}</Text>
+        </>
+      ) : (
+        <>
+          <Upload color={Colors.accent.gold} size={14} />
+          <Text style={styles.fullBtnText}>{label}</Text>
+        </>
+      )}
     </TouchableOpacity>
   );
 }
@@ -83,5 +103,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600' as const,
     color: Colors.accent.gold,
+  },
+  lockedBtn: {
+    backgroundColor: Colors.bg.tertiary,
+    borderColor: Colors.border.subtle,
+  },
+  lockedText: {
+    color: Colors.text.tertiary,
   },
 });
