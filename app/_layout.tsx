@@ -5,8 +5,11 @@ import React, { useEffect, useState, useCallback } from "react";
 import { StyleSheet, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SyncProvider } from "@/contexts/SyncContext";
 import { ProjectProvider } from "@/contexts/ProjectContext";
 import { SubscriptionProvider } from "@/contexts/SubscriptionContext";
+import { DeviceLicenseProvider } from "@/contexts/DeviceLicenseContext";
+import { PermissionProvider } from "@/contexts/PermissionContext";
 import Colors from "@/constants/colors";
 import {
   hasCompletedOnboarding,
@@ -41,8 +44,11 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <AuthProvider>
-          <ProjectProvider>
+          <SyncProvider>
+            <ProjectProvider>
             <SubscriptionProvider>
+              <DeviceLicenseProvider>
+              <PermissionProvider>
               {showOnboarding ? (
                 <OnboardingFlow onComplete={handleOnboardingComplete} />
               ) : (
@@ -329,10 +335,54 @@ export default function RootLayout() {
                     name="paywall"
                     options={{ presentation: "modal", headerShown: false }}
                   />
+                  <Stack.Screen
+                    name="auth/sign-in"
+                    options={{ headerShown: false }}
+                  />
+                  <Stack.Screen
+                    name="auth/sign-up"
+                    options={{
+                      presentation: "modal",
+                      title: "Create Account",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="auth/forgot-password"
+                    options={{
+                      presentation: "modal",
+                      title: "Reset Password",
+                    }}
+                  />
+                  <Stack.Screen
+                    name="auth/profile"
+                    options={{ title: "Profile" }}
+                  />
+                  <Stack.Screen
+                    name="settings/sync"
+                    options={{ title: "Sync Settings" }}
+                  />
+                  <Stack.Screen
+                    name="settings/devices"
+                    options={{ title: "My Devices" }}
+                  />
+                  <Stack.Screen
+                    name="project/team"
+                    options={{ title: "Team" }}
+                  />
+                  <Stack.Screen
+                    name="project/invite"
+                    options={{
+                      presentation: "modal",
+                      title: "Invite Member",
+                    }}
+                  />
                 </Stack>
               )}
+              </PermissionProvider>
+              </DeviceLicenseProvider>
             </SubscriptionProvider>
-          </ProjectProvider>
+            </ProjectProvider>
+          </SyncProvider>
         </AuthProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>

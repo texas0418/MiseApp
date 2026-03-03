@@ -3,21 +3,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import createContextHook from '@nkzw/create-context-hook';
 import {
-  Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown, LocationScout,
-  BudgetItem, ContinuityNote, VFXShot, FestivalSubmission, ProductionNote,
-  MoodBoardItem, DirectorCredit, ShotReference, WrapReport, LocationWeather,
-  BlockingNote, ColorReference, TimeEntry, ScriptSide, CastMember, LookbookItem,
-  DirectorStatement, SceneSelect, DirectorMessage
+  Project, Shot, ScheduleDay, CrewMember, Take, SceneBreakdown,
+  LocationScout, BudgetItem, ContinuityNote, VFXShot, FestivalSubmission,
+  ProductionNote, MoodBoardItem, DirectorCredit, ShotReference, WrapReport,
+  LocationWeather, BlockingNote, ColorReference, TimeEntry, ScriptSide,
+  CastMember, LookbookItem, DirectorStatement, SceneSelect, DirectorMessage
 } from '@/types';
 import {
-  SAMPLE_PROJECTS, SAMPLE_SHOTS, SAMPLE_SCHEDULE, SAMPLE_CREW, SAMPLE_TAKES,
-  SAMPLE_SCENE_BREAKDOWNS, SAMPLE_LOCATIONS, SAMPLE_BUDGET, SAMPLE_CONTINUITY,
-  SAMPLE_VFX, SAMPLE_FESTIVALS, SAMPLE_NOTES, SAMPLE_MOOD_BOARD, SAMPLE_CREDITS,
-  SAMPLE_SHOT_REFERENCES, SAMPLE_WRAP_REPORTS, SAMPLE_LOCATION_WEATHER,
-  SAMPLE_BLOCKING_NOTES, SAMPLE_COLOR_REFERENCES, SAMPLE_TIME_ENTRIES,
-  SAMPLE_SCRIPT_SIDES, SAMPLE_CAST, SAMPLE_LOOKBOOK, SAMPLE_DIRECTOR_STATEMENT,
+  SAMPLE_PROJECTS, SAMPLE_SHOTS, SAMPLE_SCHEDULE, SAMPLE_CREW,
+  SAMPLE_TAKES, SAMPLE_SCENE_BREAKDOWNS, SAMPLE_LOCATIONS, SAMPLE_BUDGET,
+  SAMPLE_CONTINUITY, SAMPLE_VFX, SAMPLE_FESTIVALS, SAMPLE_NOTES,
+  SAMPLE_MOOD_BOARD, SAMPLE_CREDITS, SAMPLE_SHOT_REFERENCES,
+  SAMPLE_WRAP_REPORTS, SAMPLE_LOCATION_WEATHER, SAMPLE_BLOCKING_NOTES,
+  SAMPLE_COLOR_REFERENCES, SAMPLE_TIME_ENTRIES, SAMPLE_SCRIPT_SIDES,
+  SAMPLE_CAST, SAMPLE_LOOKBOOK, SAMPLE_DIRECTOR_STATEMENT,
   SAMPLE_SELECTS, SAMPLE_MESSAGES
 } from '@/mocks/data';
+import { useSync } from '@/contexts/SyncContext';
 
 const STORAGE_KEYS = {
   projects: 'mise_projects',
@@ -56,7 +58,6 @@ async function loadFromStorage<T>(key: string, fallback: T[]): Promise<T[]> {
     if (stored) {
       const parsed = JSON.parse(stored);
       if (Array.isArray(parsed)) return parsed;
-      // Invalid data — remove and use fallback
       await AsyncStorage.removeItem(key);
     }
     if (safeFallback.length > 0) {
@@ -65,7 +66,6 @@ async function loadFromStorage<T>(key: string, fallback: T[]): Promise<T[]> {
     return safeFallback;
   } catch (e) {
     console.log('Storage load error:', e);
-    // Remove corrupted key
     try { await AsyncStorage.removeItem(key); } catch (_) {}
     return safeFallback;
   }
@@ -81,7 +81,18 @@ async function saveToStorage<T>(key: string, data: T[]): Promise<T[]> {
   }
 }
 
-function useEntityStore<T extends { id: string }>(queryKey: string, storageKey: string, fallback: T[]) {
+// ---------------------------------------------------------------------------
+// useEntityStore — now accepts supabaseTable to enqueue mutations for sync.
+// The enqueueMutation function is passed in so this hook doesn't call useSync
+// directly (useSync is called once in the parent createContextHook).
+// ---------------------------------------------------------------------------
+function useEntityStore<T extends { id: string }>(
+  queryKey: string,
+  storageKey: string,
+  fallback: T[],
+  supabaseTable: string,
+  enqueueMutation: (table: string, recordId: string, action: 'insert' | 'update' | 'delete', data: Record<string, any> | null) => Promise<void>,
+) {
   const queryClient = useQueryClient();
 
   const query = useQuery({
@@ -98,19 +109,26 @@ function useEntityStore<T extends { id: string }>(queryKey: string, storageKey: 
 
   const add = useCallback((item: T) => {
     saveMutation.mutate([...items, item]);
-  }, [items]);
+    enqueueMutation(supabaseTable, item.id, 'insert', item as any);
+  }, [items, supabaseTable]);
 
   const addBulk = useCallback((newItems: T[]) => {
     saveMutation.mutate([...items, ...newItems]);
-  }, [items]);
+    // Enqueue each item individually for sync
+    for (const item of newItems) {
+      enqueueMutation(supabaseTable, item.id, 'insert', item as any);
+    }
+  }, [items, supabaseTable]);
 
   const update = useCallback((item: T) => {
     saveMutation.mutate(items.map(i => i.id === item.id ? item : i));
-  }, [items]);
+    enqueueMutation(supabaseTable, item.id, 'update', item as any);
+  }, [items, supabaseTable]);
 
   const remove = useCallback((id: string) => {
     saveMutation.mutate(items.filter(i => i.id !== id));
-  }, [items]);
+    enqueueMutation(supabaseTable, id, 'delete', null);
+  }, [items, supabaseTable]);
 
   return { items, add, addBulk, update, remove, isLoading: query.isLoading };
 }
@@ -118,32 +136,35 @@ function useEntityStore<T extends { id: string }>(queryKey: string, storageKey: 
 export const [ProjectProvider, useProjects] = createContextHook(() => {
   const [activeProjectId, setActiveProjectId] = useState<string | null>('1');
 
-  const projectStore = useEntityStore<Project>('projects', STORAGE_KEYS.projects, SAMPLE_PROJECTS);
-  const shotStore = useEntityStore<Shot>('shots', STORAGE_KEYS.shots, SAMPLE_SHOTS);
-  const scheduleStore = useEntityStore<ScheduleDay>('schedule', STORAGE_KEYS.schedule, SAMPLE_SCHEDULE);
-  const crewStore = useEntityStore<CrewMember>('crew', STORAGE_KEYS.crew, SAMPLE_CREW);
-  const takeStore = useEntityStore<Take>('takes', STORAGE_KEYS.takes, SAMPLE_TAKES);
-  const breakdownStore = useEntityStore<SceneBreakdown>('sceneBreakdowns', STORAGE_KEYS.sceneBreakdowns, SAMPLE_SCENE_BREAKDOWNS);
-  const locationStore = useEntityStore<LocationScout>('locations', STORAGE_KEYS.locations, SAMPLE_LOCATIONS);
-  const budgetStore = useEntityStore<BudgetItem>('budget', STORAGE_KEYS.budget, SAMPLE_BUDGET);
-  const continuityStore = useEntityStore<ContinuityNote>('continuity', STORAGE_KEYS.continuity, SAMPLE_CONTINUITY);
-  const vfxStore = useEntityStore<VFXShot>('vfx', STORAGE_KEYS.vfx, SAMPLE_VFX);
-  const festivalStore = useEntityStore<FestivalSubmission>('festivals', STORAGE_KEYS.festivals, SAMPLE_FESTIVALS);
-  const noteStore = useEntityStore<ProductionNote>('notes', STORAGE_KEYS.notes, SAMPLE_NOTES);
-  const moodBoardStore = useEntityStore<MoodBoardItem>('moodBoard', STORAGE_KEYS.moodBoard, SAMPLE_MOOD_BOARD);
-  const creditStore = useEntityStore<DirectorCredit>('credits', STORAGE_KEYS.credits, SAMPLE_CREDITS);
-  const shotRefStore = useEntityStore<ShotReference>('shotReferences', STORAGE_KEYS.shotReferences, SAMPLE_SHOT_REFERENCES);
-  const wrapReportStore = useEntityStore<WrapReport>('wrapReports', STORAGE_KEYS.wrapReports, SAMPLE_WRAP_REPORTS);
-  const locationWeatherStore = useEntityStore<LocationWeather>('locationWeather', STORAGE_KEYS.locationWeather, SAMPLE_LOCATION_WEATHER);
-  const blockingStore = useEntityStore<BlockingNote>('blockingNotes', STORAGE_KEYS.blockingNotes, SAMPLE_BLOCKING_NOTES);
-  const colorRefStore = useEntityStore<ColorReference>('colorReferences', STORAGE_KEYS.colorReferences, SAMPLE_COLOR_REFERENCES);
-  const timeEntryStore = useEntityStore<TimeEntry>('timeEntries', STORAGE_KEYS.timeEntries, SAMPLE_TIME_ENTRIES);
-  const scriptSideStore = useEntityStore<ScriptSide>('scriptSides', STORAGE_KEYS.scriptSides, SAMPLE_SCRIPT_SIDES);
-  const castStore = useEntityStore<CastMember>('cast', STORAGE_KEYS.cast, SAMPLE_CAST);
-  const lookbookStore = useEntityStore<LookbookItem>('lookbook', STORAGE_KEYS.lookbook, SAMPLE_LOOKBOOK);
-  const directorStatementStore = useEntityStore<DirectorStatement>('directorStatement', STORAGE_KEYS.directorStatement, SAMPLE_DIRECTOR_STATEMENT);
-  const selectStore = useEntityStore<SceneSelect>('selects', STORAGE_KEYS.selects, SAMPLE_SELECTS);
-  const messageStore = useEntityStore<DirectorMessage>('messages', STORAGE_KEYS.messages, SAMPLE_MESSAGES);
+  // Get enqueueMutation from SyncContext — if sync is disabled, this is a no-op
+  const { enqueueMutation } = useSync();
+
+  const projectStore = useEntityStore<Project>('projects', STORAGE_KEYS.projects, SAMPLE_PROJECTS, 'projects', enqueueMutation);
+  const shotStore = useEntityStore<Shot>('shots', STORAGE_KEYS.shots, SAMPLE_SHOTS, 'shots', enqueueMutation);
+  const scheduleStore = useEntityStore<ScheduleDay>('schedule', STORAGE_KEYS.schedule, SAMPLE_SCHEDULE, 'schedule_days', enqueueMutation);
+  const crewStore = useEntityStore<CrewMember>('crew', STORAGE_KEYS.crew, SAMPLE_CREW, 'crew_members', enqueueMutation);
+  const takeStore = useEntityStore<Take>('takes', STORAGE_KEYS.takes, SAMPLE_TAKES, 'takes', enqueueMutation);
+  const breakdownStore = useEntityStore<SceneBreakdown>('sceneBreakdowns', STORAGE_KEYS.sceneBreakdowns, SAMPLE_SCENE_BREAKDOWNS, 'scene_breakdowns', enqueueMutation);
+  const locationStore = useEntityStore<LocationScout>('locations', STORAGE_KEYS.locations, SAMPLE_LOCATIONS, 'location_scouts', enqueueMutation);
+  const budgetStore = useEntityStore<BudgetItem>('budget', STORAGE_KEYS.budget, SAMPLE_BUDGET, 'budget_items', enqueueMutation);
+  const continuityStore = useEntityStore<ContinuityNote>('continuity', STORAGE_KEYS.continuity, SAMPLE_CONTINUITY, 'continuity_notes', enqueueMutation);
+  const vfxStore = useEntityStore<VFXShot>('vfx', STORAGE_KEYS.vfx, SAMPLE_VFX, 'vfx_shots', enqueueMutation);
+  const festivalStore = useEntityStore<FestivalSubmission>('festivals', STORAGE_KEYS.festivals, SAMPLE_FESTIVALS, 'festival_submissions', enqueueMutation);
+  const noteStore = useEntityStore<ProductionNote>('notes', STORAGE_KEYS.notes, SAMPLE_NOTES, 'production_notes', enqueueMutation);
+  const moodBoardStore = useEntityStore<MoodBoardItem>('moodBoard', STORAGE_KEYS.moodBoard, SAMPLE_MOOD_BOARD, 'mood_board_items', enqueueMutation);
+  const creditStore = useEntityStore<DirectorCredit>('credits', STORAGE_KEYS.credits, SAMPLE_CREDITS, 'director_credits', enqueueMutation);
+  const shotRefStore = useEntityStore<ShotReference>('shotReferences', STORAGE_KEYS.shotReferences, SAMPLE_SHOT_REFERENCES, 'shot_references', enqueueMutation);
+  const wrapReportStore = useEntityStore<WrapReport>('wrapReports', STORAGE_KEYS.wrapReports, SAMPLE_WRAP_REPORTS, 'wrap_reports', enqueueMutation);
+  const locationWeatherStore = useEntityStore<LocationWeather>('locationWeather', STORAGE_KEYS.locationWeather, SAMPLE_LOCATION_WEATHER, 'location_weather', enqueueMutation);
+  const blockingStore = useEntityStore<BlockingNote>('blockingNotes', STORAGE_KEYS.blockingNotes, SAMPLE_BLOCKING_NOTES, 'blocking_notes', enqueueMutation);
+  const colorRefStore = useEntityStore<ColorReference>('colorReferences', STORAGE_KEYS.colorReferences, SAMPLE_COLOR_REFERENCES, 'color_references', enqueueMutation);
+  const timeEntryStore = useEntityStore<TimeEntry>('timeEntries', STORAGE_KEYS.timeEntries, SAMPLE_TIME_ENTRIES, 'time_entries', enqueueMutation);
+  const scriptSideStore = useEntityStore<ScriptSide>('scriptSides', STORAGE_KEYS.scriptSides, SAMPLE_SCRIPT_SIDES, 'script_sides', enqueueMutation);
+  const castStore = useEntityStore<CastMember>('cast', STORAGE_KEYS.cast, SAMPLE_CAST, 'cast_members', enqueueMutation);
+  const lookbookStore = useEntityStore<LookbookItem>('lookbook', STORAGE_KEYS.lookbook, SAMPLE_LOOKBOOK, 'lookbook_items', enqueueMutation);
+  const directorStatementStore = useEntityStore<DirectorStatement>('directorStatement', STORAGE_KEYS.directorStatement, SAMPLE_DIRECTOR_STATEMENT, 'director_statements', enqueueMutation);
+  const selectStore = useEntityStore<SceneSelect>('selects', STORAGE_KEYS.selects, SAMPLE_SELECTS, 'scene_selects', enqueueMutation);
+  const messageStore = useEntityStore<DirectorMessage>('messages', STORAGE_KEYS.messages, SAMPLE_MESSAGES, 'director_messages', enqueueMutation);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEYS.activeProject).then((id) => {
@@ -192,111 +213,35 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
     moodBoardItems, directorCredits, shotReferences, wrapReports,
     locationWeather, blockingNotes, colorReferences, timeEntries,
     scriptSides, castMembers, lookbookItems, directorStatements,
-    sceneSelects, directorMessages,
-    activeProject, activeProjectId, isLoading, selectProject,
+    sceneSelects, directorMessages, activeProject, activeProjectId,
+    isLoading, selectProject,
 
-    addProject: projectStore.add,
-    updateProject: projectStore.update,
-    deleteProject: projectStore.remove,
-
-    addShot: shotStore.add,
-    updateShot: shotStore.update,
-    deleteShot: shotStore.remove,
-
-    addScheduleDay: scheduleStore.add,
-    updateScheduleDay: scheduleStore.update,
-    deleteScheduleDay: scheduleStore.remove,
-
-    addCrewMember: crewStore.add,
-    updateCrewMember: crewStore.update,
-    deleteCrewMember: crewStore.remove,
-
-    addTake: takeStore.add,
-    updateTake: takeStore.update,
-
-    addBreakdown: breakdownStore.add,
-    updateBreakdown: breakdownStore.update,
-    deleteBreakdown: breakdownStore.remove,
-
-    addLocation: locationStore.add,
-    updateLocation: locationStore.update,
-    deleteLocation: locationStore.remove,
-
-    addBudgetItem: budgetStore.add,
-    updateBudgetItem: budgetStore.update,
-    deleteBudgetItem: budgetStore.remove,
-
-    addContinuityNote: continuityStore.add,
-    updateContinuityNote: continuityStore.update,
-    deleteContinuityNote: continuityStore.remove,
-
-    addVFXShot: vfxStore.add,
-    updateVFXShot: vfxStore.update,
-    deleteVFXShot: vfxStore.remove,
-
-    addFestival: festivalStore.add,
-    updateFestival: festivalStore.update,
-    deleteFestival: festivalStore.remove,
-
-    addNote: noteStore.add,
-    updateNote: noteStore.update,
-    deleteNote: noteStore.remove,
-
-    addMoodBoardItem: moodBoardStore.add,
-    updateMoodBoardItem: moodBoardStore.update,
-    deleteMoodBoardItem: moodBoardStore.remove,
-
-    addCredit: creditStore.add,
-    updateCredit: creditStore.update,
-    deleteCredit: creditStore.remove,
-
-    addShotReference: shotRefStore.add,
-    updateShotReference: shotRefStore.update,
-    deleteShotReference: shotRefStore.remove,
-
-    addWrapReport: wrapReportStore.add,
-    updateWrapReport: wrapReportStore.update,
-    deleteWrapReport: wrapReportStore.remove,
-
-    addLocationWeather: locationWeatherStore.add,
-    updateLocationWeather: locationWeatherStore.update,
-    deleteLocationWeather: locationWeatherStore.remove,
-
-    addBlockingNote: blockingStore.add,
-    updateBlockingNote: blockingStore.update,
-    deleteBlockingNote: blockingStore.remove,
-
-    addColorReference: colorRefStore.add,
-    updateColorReference: colorRefStore.update,
-    deleteColorReference: colorRefStore.remove,
-
-    addTimeEntry: timeEntryStore.add,
-    updateTimeEntry: timeEntryStore.update,
-    deleteTimeEntry: timeEntryStore.remove,
-
-    addScriptSide: scriptSideStore.add,
-    updateScriptSide: scriptSideStore.update,
-    deleteScriptSide: scriptSideStore.remove,
-
-    addCastMember: castStore.add,
-    updateCastMember: castStore.update,
-    deleteCastMember: castStore.remove,
-
-    addLookbookItem: lookbookStore.add,
-    updateLookbookItem: lookbookStore.update,
-    deleteLookbookItem: lookbookStore.remove,
-
-    addDirectorStatement: directorStatementStore.add,
-    updateDirectorStatement: directorStatementStore.update,
-    deleteDirectorStatement: directorStatementStore.remove,
-
-    addSceneSelect: selectStore.add,
-    updateSceneSelect: selectStore.update,
-    deleteSceneSelect: selectStore.remove,
-
-    addMessage: messageStore.add,
-    updateMessage: messageStore.update,
-    deleteMessage: messageStore.remove,
+    addProject: projectStore.add, updateProject: projectStore.update, deleteProject: projectStore.remove,
+    addShot: shotStore.add, updateShot: shotStore.update, deleteShot: shotStore.remove,
+    addScheduleDay: scheduleStore.add, updateScheduleDay: scheduleStore.update, deleteScheduleDay: scheduleStore.remove,
+    addCrewMember: crewStore.add, updateCrewMember: crewStore.update, deleteCrewMember: crewStore.remove,
+    addTake: takeStore.add, updateTake: takeStore.update,
+    addBreakdown: breakdownStore.add, updateBreakdown: breakdownStore.update, deleteBreakdown: breakdownStore.remove,
+    addLocation: locationStore.add, updateLocation: locationStore.update, deleteLocation: locationStore.remove,
+    addBudgetItem: budgetStore.add, updateBudgetItem: budgetStore.update, deleteBudgetItem: budgetStore.remove,
+    addContinuityNote: continuityStore.add, updateContinuityNote: continuityStore.update, deleteContinuityNote: continuityStore.remove,
+    addVFXShot: vfxStore.add, updateVFXShot: vfxStore.update, deleteVFXShot: vfxStore.remove,
+    addFestival: festivalStore.add, updateFestival: festivalStore.update, deleteFestival: festivalStore.remove,
+    addNote: noteStore.add, updateNote: noteStore.update, deleteNote: noteStore.remove,
+    addMoodBoardItem: moodBoardStore.add, updateMoodBoardItem: moodBoardStore.update, deleteMoodBoardItem: moodBoardStore.remove,
+    addCredit: creditStore.add, updateCredit: creditStore.update, deleteCredit: creditStore.remove,
+    addShotReference: shotRefStore.add, updateShotReference: shotRefStore.update, deleteShotReference: shotRefStore.remove,
+    addWrapReport: wrapReportStore.add, updateWrapReport: wrapReportStore.update, deleteWrapReport: wrapReportStore.remove,
+    addLocationWeather: locationWeatherStore.add, updateLocationWeather: locationWeatherStore.update, deleteLocationWeather: locationWeatherStore.remove,
+    addBlockingNote: blockingStore.add, updateBlockingNote: blockingStore.update, deleteBlockingNote: blockingStore.remove,
+    addColorReference: colorRefStore.add, updateColorReference: colorRefStore.update, deleteColorReference: colorRefStore.remove,
+    addTimeEntry: timeEntryStore.add, updateTimeEntry: timeEntryStore.update, deleteTimeEntry: timeEntryStore.remove,
+    addScriptSide: scriptSideStore.add, updateScriptSide: scriptSideStore.update, deleteScriptSide: scriptSideStore.remove,
+    addCastMember: castStore.add, updateCastMember: castStore.update, deleteCastMember: castStore.remove,
+    addLookbookItem: lookbookStore.add, updateLookbookItem: lookbookStore.update, deleteLookbookItem: lookbookStore.remove,
+    addDirectorStatement: directorStatementStore.add, updateDirectorStatement: directorStatementStore.update, deleteDirectorStatement: directorStatementStore.remove,
+    addSceneSelect: selectStore.add, updateSceneSelect: selectStore.update, deleteSceneSelect: selectStore.remove,
+    addMessage: messageStore.add, updateMessage: messageStore.update, deleteMessage: messageStore.remove,
 
     // Bulk import methods
     addCrewMemberBulk: crewStore.addBulk,
@@ -314,6 +259,10 @@ export const [ProjectProvider, useProjects] = createContextHook(() => {
     addWrapReportBulk: wrapReportStore.addBulk,
   };
 });
+
+// ---------------------------------------------------------------------------
+// Project-scoped helper hooks (unchanged from original)
+// ---------------------------------------------------------------------------
 
 export function useProjectShots(projectId: string | null) {
   const { shots } = useProjects();
@@ -423,7 +372,9 @@ export function useProjectDirectorStatement(projectId: string | null) {
 export function useProjectSelects(projectId: string | null) {
   const { sceneSelects } = useProjects();
   return sceneSelects.filter(s => s.projectId === projectId).sort((a, b) =>
-    a.sceneNumber - b.sceneNumber || a.shotNumber.localeCompare(b.shotNumber) || b.rating - a.rating
+    a.sceneNumber - b.sceneNumber ||
+    a.shotNumber.localeCompare(b.shotNumber) ||
+    b.rating - a.rating
   );
 }
 
