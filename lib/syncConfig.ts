@@ -37,7 +37,7 @@ export const SYNCABLE_TABLES: TableConfig[] = [
   { table: 'director_credits', storageKey: 'mise_credits', queryKey: 'credits', projectScoped: true },
   { table: 'shot_references', storageKey: 'mise_shot_references', queryKey: 'shotReferences', projectScoped: true },
   { table: 'wrap_reports', storageKey: 'mise_wrap_reports', queryKey: 'wrapReports', projectScoped: true },
-  { table: 'location_weather', storageKey: 'mise_location_weather', queryKey: 'locationWeather', projectScoped: true },
+  { table: 'location_weather', storageKey: 'mise_location_weather', queryKey: 'locationWeather', projectScoped: false },
   { table: 'blocking_notes', storageKey: 'mise_blocking_notes', queryKey: 'blockingNotes', projectScoped: true },
   { table: 'color_references', storageKey: 'mise_color_references', queryKey: 'colorReferences', projectScoped: true },
   { table: 'time_entries', storageKey: 'mise_time_entries', queryKey: 'timeEntries', projectScoped: true },
