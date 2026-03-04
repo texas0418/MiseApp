@@ -9,6 +9,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { LocationScout } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function LocationCard({ item, isExpanded, onPress, onEdit, onDelete }: {
   item: LocationScout;
@@ -169,6 +170,7 @@ export default function LocationsScreen() {
   }
 
   return (
+    <PermissionGate resource="locations">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Locations' }} />
 
@@ -211,6 +213,7 @@ export default function LocationsScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

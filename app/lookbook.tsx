@@ -7,6 +7,7 @@ import { useProjects, useProjectLookbook, useProjectDirectorStatement } from '@/
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { LookbookItem, LookbookSectionType, DirectorStatement } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const SECTION_CONFIG: Record<LookbookSectionType, { label: string; icon: React.ElementType; color: string }> = {
   'tone': { label: 'Tone & Mood', icon: Sparkles, color: '#FBBF24' },
@@ -186,6 +187,7 @@ export default function LookbookScreen() {
     .filter(s => s.data.length > 0);
 
   return (
+    <PermissionGate resource="lookbook">
     <View style={styles.container}>
       <SectionList
         sections={sections}
@@ -246,6 +248,7 @@ export default function LookbookScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

@@ -8,6 +8,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { TimeEntry } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const DEPT_COLORS: Record<string, string> = {
   direction: Colors.department.direction,
@@ -137,6 +138,7 @@ export default function TimeTrackerScreen() {
   }
 
   return (
+    <PermissionGate resource="time_entries">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Time Tracker' }} />
 
@@ -192,6 +194,7 @@ export default function TimeTrackerScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { Share2 as ShareIcon, FileText, Camera, CalendarDays, DollarSign, ClipboardList, AlertCircle, Download } from 'lucide-react-native';
 import { useProjects, useProjectShots, useProjectSchedule, useProjectBudget, useProjectWrapReports } from '@/contexts/ProjectContext';
 import Colors from '@/constants/colors';
+import PermissionGate from '@/contexts/PermissionGate';
 
 interface ExportOption {
   icon: React.ElementType;
@@ -98,6 +99,7 @@ export default function ExportShareScreen() {
 
   if (!activeProject) {
     return (
+      <PermissionGate resource="export">
       <View style={styles.empty}>
         <AlertCircle color={Colors.text.tertiary} size={48} />
         <Text style={styles.emptyTitle}>No project selected</Text>
@@ -140,6 +142,7 @@ export default function ExportShareScreen() {
         );
       })}
     </ScrollView>
+  </PermissionGate>
   );
 }
 

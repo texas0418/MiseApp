@@ -8,6 +8,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { ScriptSide, SidesStatus, SideAnnotation } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const STATUS_CONFIG: Record<SidesStatus, { label: string; color: string; bg: string }> = {
   'upcoming': { label: 'UPCOMING', color: '#60A5FA', bg: '#60A5FA18' },
@@ -241,6 +242,7 @@ export default function ScriptSidesScreen() {
   ];
 
   return (
+    <PermissionGate resource="script_sides">
     <View style={styles.container}>
       <FlatList
         data={filteredSides}
@@ -307,6 +309,7 @@ export default function ScriptSidesScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

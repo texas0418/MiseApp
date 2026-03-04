@@ -9,6 +9,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { CastMember, CastStatus } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const STATUS_CONFIG: Record<CastStatus, { label: string; color: string }> = {
   'confirmed': { label: 'CONFIRMED', color: '#4ADE80' },
@@ -246,6 +247,7 @@ export default function CastManagerScreen() {
   ), [deleteCastMember, handleStatusChange]);
 
   return (
+    <PermissionGate resource="cast">
     <View style={styles.container}>
       <FlatList
         data={filteredCast}
@@ -312,6 +314,7 @@ export default function CastManagerScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

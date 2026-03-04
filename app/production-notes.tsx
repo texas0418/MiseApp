@@ -6,6 +6,7 @@ import { useProjects, useProjectNotes } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { ProductionNote, NoteCategory } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const CAT_COLORS: Record<NoteCategory, string> = {
   'general': Colors.text.secondary,
@@ -139,6 +140,7 @@ export default function ProductionNotesScreen() {
   }
 
   return (
+    <PermissionGate resource="notes">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Production Notes' }} />
 
@@ -211,6 +213,7 @@ export default function ProductionNotesScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

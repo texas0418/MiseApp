@@ -6,6 +6,7 @@ import { useProjects, useProjectMessages } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { DirectorMessage, MessageCategory, MessagePriority } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const CATEGORY_CONFIG: Record<MessageCategory, { label: string; color: string; icon: string }> = {
   'moving-on': { label: 'Moving On', color: '#34D399', icon: '→' },
@@ -130,6 +131,7 @@ export default function CommsHubScreen() {
   ];
 
   return (
+    <PermissionGate resource="messages">
     <View style={styles.container}>
       <FlatList
         data={filtered}
@@ -198,6 +200,7 @@ export default function CommsHubScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

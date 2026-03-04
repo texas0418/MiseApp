@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { Aperture } from 'lucide-react-native';
 import Colors from '@/constants/colors';
 import { LENS_DATA } from '@/mocks/data';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const SENSOR_SIZES = [
   { label: 'Full Frame', width: 36, height: 24 },
@@ -39,6 +40,7 @@ export default function LensCalculatorScreen() {
   }, [sensor]);
 
   return (
+    <PermissionGate resource="lens_calc">
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Stack.Screen options={{ title: 'Lens Calculator' }} />
 
@@ -105,6 +107,7 @@ export default function LensCalculatorScreen() {
         ))}
       </View>
     </ScrollView>
+  </PermissionGate>
   );
 }
 

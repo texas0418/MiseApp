@@ -7,6 +7,7 @@ import { useProjects, useProjectMoodBoard } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { MoodBoardItem } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function MoodBoardCard({ item, isSelected, onPress, onEdit, onDelete }: {
   item: MoodBoardItem;
@@ -115,6 +116,7 @@ export default function MoodBoardsScreen() {
   }
 
   return (
+    <PermissionGate resource="mood_board">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Mood Boards' }} />
 
@@ -164,6 +166,7 @@ export default function MoodBoardsScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

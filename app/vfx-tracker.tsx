@@ -8,6 +8,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { VFXShot, VFXShotStatus, VFXComplexity } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const STATUS_CONFIG: Record<VFXShotStatus, { color: string; label: string }> = {
   'pending': { color: Colors.text.tertiary, label: 'Pending' },
@@ -161,6 +162,7 @@ export default function VFXTrackerScreen() {
   }
 
   return (
+    <PermissionGate resource="vfx">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'VFX Tracker' }} />
 
@@ -232,6 +234,7 @@ export default function VFXTrackerScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

@@ -8,6 +8,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { FestivalSubmission, FestivalStatus } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const STATUS_CONFIG: Record<FestivalStatus, { color: string; label: string }> = {
   'researching': { color: Colors.text.tertiary, label: 'Researching' },
@@ -119,6 +120,7 @@ export default function FestivalTrackerScreen() {
   }
 
   return (
+    <PermissionGate resource="festivals">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Festival Tracker' }} />
       <View style={styles.statsRow}>
@@ -158,6 +160,7 @@ export default function FestivalTrackerScreen() {
 
 <TouchableOpacity style={styles.fab} onPress={() => router.push('/new-festival' as never)} activeOpacity={0.8}><Plus color={Colors.text.inverse} size={24} /></TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

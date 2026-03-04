@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useProjects } from '@/contexts/ProjectContext';
 import Colors from '@/constants/colors';
+import PermissionGate from '@/contexts/PermissionGate';
 
 export default function DigitalSlateScreen() {
   const { activeProject } = useProjects();
@@ -51,6 +52,7 @@ export default function DigitalSlateScreen() {
   });
 
   return (
+    <PermissionGate resource="digital_slate">
     <KeyboardAvoidingView
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -117,6 +119,7 @@ export default function DigitalSlateScreen() {
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
+  </PermissionGate>
   );
 }
 

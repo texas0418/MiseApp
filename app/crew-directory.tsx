@@ -8,6 +8,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { CrewMember, Department } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const DEPT_LABELS: Record<Department, string> = {
   direction: 'Direction', camera: 'Camera', sound: 'Sound', art: 'Art',
@@ -186,6 +187,7 @@ export default function CrewDirectoryScreen() {
   }, [crew]);
 
   return (
+    <PermissionGate resource="crew">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Crew Directory' }} />
 
@@ -293,6 +295,7 @@ export default function CrewDirectoryScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

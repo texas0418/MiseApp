@@ -13,6 +13,7 @@ import * as ExpoLocation from 'expo-location';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
+import PermissionGate from '@/contexts/PermissionGate';
 
 // ─── Types ───
 
@@ -162,6 +163,7 @@ function ForecastCard({ day, isExpanded, onToggle }: { day: DayForecast; isExpan
   const isToday = new Date().toISOString().split('T')[0] === day.date;
 
   return (
+    <PermissionGate resource="weather">
     <TouchableOpacity
       style={[styles.card, isToday && styles.cardToday]}
       onPress={onToggle}
@@ -642,6 +644,7 @@ export default function LocationWeatherScreen() {
         </View>
       )}
     </ScrollView>
+  </PermissionGate>
   );
 }
 

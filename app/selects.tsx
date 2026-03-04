@@ -6,6 +6,7 @@ import { useProjects, useProjectSelects } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { SceneSelect } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function StarRating({ rating, size = 12 }: { rating: number; size?: number }) {
   return (
@@ -145,6 +146,7 @@ export default function SelectsScreen() {
   const scenesWithSelects = new Set(selects.map(s => s.sceneNumber)).size;
 
   return (
+    <PermissionGate resource="selects">
     <View style={styles.container}>
       <SectionList
         sections={sections}
@@ -215,6 +217,7 @@ export default function SelectsScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

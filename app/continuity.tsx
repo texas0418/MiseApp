@@ -8,6 +8,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { ContinuityNote } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function ContinuityCard({ item, isExpanded, onPress, onEdit, onDelete }: {
   item: ContinuityNote;
@@ -112,6 +113,7 @@ export default function ContinuityScreen() {
   }
 
   return (
+    <PermissionGate resource="continuity">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Continuity Notes' }} />
 
@@ -161,6 +163,7 @@ export default function ContinuityScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

@@ -6,6 +6,7 @@ import { useProjects, useProjectBlockingNotes } from '@/contexts/ProjectContext'
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { BlockingNote } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function BlockingCard({ item, isExpanded, onPress, onEdit, onDelete }: {
   item: BlockingNote;
@@ -110,6 +111,7 @@ export default function BlockingNotesScreen() {
   }
 
   return (
+    <PermissionGate resource="blocking">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Blocking & Rehearsal' }} />
 
@@ -150,6 +152,7 @@ export default function BlockingNotesScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

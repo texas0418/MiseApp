@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Stack } from 'expo-router';
 import Colors from '@/constants/colors';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const ASPECT_RATIOS = [
   { label: '2.39:1', value: 2.39, name: 'Anamorphic / Scope', desc: 'Epic, cinematic feel. Used in blockbusters and prestige films. Think Blade Runner 2049, Lawrence of Arabia.' },
@@ -20,6 +21,7 @@ export default function FrameGuidesScreen() {
   const [selected, setSelected] = useState<number | null>(0);
 
   return (
+    <PermissionGate resource="frame_guides">
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Stack.Screen options={{ title: 'Frame Guides' }} />
 
@@ -69,6 +71,7 @@ export default function FrameGuidesScreen() {
         );
       })}
     </ScrollView>
+  </PermissionGate>
   );
 }
 

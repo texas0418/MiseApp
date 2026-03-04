@@ -6,6 +6,7 @@ import { useProjects, useProjectSchedule } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { ScheduleDay } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function CallSheetCard({ day, crew, projectTitle, isExpanded, onPress, onEdit, onDelete }: {
   day: ScheduleDay;
@@ -153,6 +154,7 @@ export default function CallSheetsScreen() {
   }
 
   return (
+    <PermissionGate resource="call_sheets">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Call Sheets' }} />
 
@@ -200,6 +202,7 @@ export default function CallSheetsScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

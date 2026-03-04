@@ -6,6 +6,7 @@ import { useProjects, useProjectShots } from '@/contexts/ProjectContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { Shot, ShotStatus } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const STATUS_FLOW: ShotStatus[] = ['planned', 'ready', 'shot', 'approved'];
 const STATUS_CONFIG: Record<ShotStatus, { label: string; color: string; icon: React.ElementType }> = {
@@ -111,6 +112,7 @@ export default function ShotChecklistScreen() {
   const progressPct = totalShots > 0 ? Math.round((shotCount / totalShots) * 100) : 0;
 
   return (
+    <PermissionGate resource="shot_checklist">
     <View style={styles.container}>
       <SectionList
         sections={sections}
@@ -206,6 +208,7 @@ export default function ShotChecklistScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

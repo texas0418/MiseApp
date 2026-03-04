@@ -5,9 +5,11 @@ import { User, Film, Trophy, Plus } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
 import Colors from '@/constants/colors';
 import { DirectorCredit } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function CreditCard({ credit }: { credit: DirectorCredit }) {
   return (
+    <PermissionGate resource="portfolio">
     <View style={styles.creditCard}>
       <View style={styles.creditLeft}>
         <Text style={styles.creditYear}>{credit.year}</Text>
@@ -88,6 +90,7 @@ export default function PortfolioScreen() {
         sorted.map(credit => <CreditCard key={credit.id} credit={credit} />)
       )}
     </ScrollView>
+  </PermissionGate>
   );
 }
 

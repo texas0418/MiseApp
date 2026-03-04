@@ -9,6 +9,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { Shot, ShotStatus } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const STATUS_CONFIG: Record<ShotStatus, { icon: React.ElementType; color: string; label: string }> = {
   planned: { icon: Clock, color: Colors.text.tertiary, label: 'Planned' },
@@ -49,6 +50,7 @@ function ShotCard({ shot, onEdit, onDelete }: { shot: Shot; onEdit: () => void; 
   );
 
   return (
+    <PermissionGate resource="shots">
     <Swipeable ref={swipeableRef} renderRightActions={renderRightActions} overshootRight={false}>
       <TouchableOpacity
         style={[styles.shotCard, expanded && styles.shotCardExpanded]}
@@ -217,6 +219,7 @@ export default function ShotsScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

@@ -8,6 +8,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { SceneBreakdown } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const TIME_COLORS: Record<string, string> = {
   'day': '#FBBF24',
@@ -178,6 +179,7 @@ export default function ScriptBreakdownScreen() {
   }
 
   return (
+    <PermissionGate resource="script_breakdown">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Script Breakdown' }} />
 
@@ -225,6 +227,7 @@ export default function ScriptBreakdownScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

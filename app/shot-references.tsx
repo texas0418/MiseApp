@@ -7,6 +7,7 @@ import { useProjects, useProjectShotReferences } from '@/contexts/ProjectContext
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { ShotReference } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function ReferenceCard({ item, isExpanded, onPress, onEdit, onDelete }: {
   item: ShotReference;
@@ -129,6 +130,7 @@ export default function ShotReferencesScreen() {
   }
 
   return (
+    <PermissionGate resource="shot_refs">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Shot References' }} />
 
@@ -170,6 +172,7 @@ export default function ShotReferencesScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

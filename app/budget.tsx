@@ -8,6 +8,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { BudgetItem, BudgetCategory } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 const CATEGORY_COLORS: Record<BudgetCategory, string> = {
   'talent': '#FB923C', 'crew': '#60A5FA', 'equipment': '#A78BFA', 'locations': '#4ADE80',
@@ -220,6 +221,7 @@ export default function BudgetScreen() {
   const spentPercent = stats.totalEstimated > 0 ? Math.min(100, (stats.totalActual / stats.totalEstimated) * 100) : 0;
 
   return (
+    <PermissionGate resource="budget">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Budget' }} />
 
@@ -345,6 +347,7 @@ export default function BudgetScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

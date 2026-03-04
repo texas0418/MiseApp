@@ -11,6 +11,7 @@ import AIImportButton from '@/components/AIImportButton';
 import NotificationSettings from '@/components/NotificationSettings';
 import { rescheduleAll } from '@/utils/notifications';
 import { ScheduleDay } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function ScheduleCard({ day, onDelete }: { day: ScheduleDay; onDelete: () => void }) {
   const [expanded, setExpanded] = useState(false);
@@ -36,6 +37,7 @@ function ScheduleCard({ day, onDelete }: { day: ScheduleDay; onDelete: () => voi
   );
 
   return (
+    <PermissionGate resource="schedule">
     <Swipeable ref={swipeableRef} renderRightActions={renderRightActions} overshootRight={false}>
       <TouchableOpacity
         style={[styles.scheduleCard, expanded && styles.scheduleCardExpanded]}
@@ -209,6 +211,7 @@ export default function ScheduleScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

@@ -8,6 +8,7 @@ import Colors from '@/constants/colors';
 import ImportButton from '@/components/ImportButton';
 import AIImportButton from '@/components/AIImportButton';
 import { WrapReport } from '@/types';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function StatBadge({ label, value, color }: { label: string; value: string | number; color?: string }) {
   return (
@@ -112,6 +113,7 @@ export default function WrapReportsScreen() {
   }
 
   return (
+    <PermissionGate resource="wrap_reports">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Wrap Reports' }} />
       {reports.length > 0 && (
@@ -139,6 +141,7 @@ export default function WrapReportsScreen() {
 
 <TouchableOpacity style={styles.fab} onPress={() => router.push('/new-wrap-report' as never)} activeOpacity={0.8}><Plus color={Colors.text.inverse} size={24} /></TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 

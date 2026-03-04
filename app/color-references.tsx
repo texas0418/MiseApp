@@ -7,6 +7,7 @@ import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 import { ColorReference, LUTStyle } from '@/types';
 import { LUT_STYLES } from '@/mocks/data';
+import PermissionGate from '@/contexts/PermissionGate';
 
 function ColorSwatch({ color, size = 24 }: { color: string; size?: number }) {
   return <View style={[styles.swatch, { backgroundColor: color, width: size, height: size, borderRadius: size / 4 }]} />;
@@ -150,6 +151,7 @@ export default function ColorReferencesScreen() {
   }
 
   return (
+    <PermissionGate resource="color_refs">
     <View style={styles.container}>
       <Stack.Screen options={{ title: 'Color & LUT Reference' }} />
 
@@ -203,6 +205,7 @@ export default function ColorReferencesScreen() {
         <Plus color={Colors.text.inverse} size={24} />
       </TouchableOpacity>
     </View>
+  </PermissionGate>
   );
 }
 
