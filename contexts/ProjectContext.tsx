@@ -134,7 +134,7 @@ function useEntityStore<T extends { id: string }>(
 }
 
 export const [ProjectProvider, useProjects] = createContextHook(() => {
-  const [activeProjectId, setActiveProjectId] = useState<string | null>('1');
+  const [activeProjectId, setActiveProjectId] = useState<string | null>(null);
 
   // Get enqueueMutation from SyncContext — if sync is disabled, this is a no-op
   const { enqueueMutation } = useSync();
