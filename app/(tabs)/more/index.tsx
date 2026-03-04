@@ -1,15 +1,10 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  FileText, MapPin, DollarSign, Clapperboard, BookOpen, BookOpenCheck,
-  Aperture, Sparkles, Trophy, Palette, StickyNote,
-  ClipboardList, User, Users, Layers, Image, CloudSun,
-  Share2, Move, Paintbrush, Clock, Drama, ListChecks, BookHeart, Star as StarIcon, Megaphone,
-  Crown, Shield, ExternalLink, RotateCcw
-} from 'lucide-react-native';
+import { FileText, MapPin, DollarSign, Clapperboard, BookOpen, BookOpenCheck, Aperture, Sparkles, Trophy, Palette, StickyNote, ClipboardList, User, Users, Layers, Image, CloudSun, Share2, Move, Paintbrush, Clock, Drama, ListChecks, BookHeart, Star as StarIcon, Megaphone, Crown, Shield, ExternalLink, RotateCcw, LogIn, UserCircle, Smartphone, Cloud } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
 
@@ -112,10 +107,15 @@ function ToolSection({ title, tools }: { title: string; tools: ToolItem[] }) {
 export default function MoreScreen() {
   const { activeProject } = useProjects();
   const { isPro } = useSubscription();
+  const { isAuthenticated, user } = useAuth();
   const router = useRouter();
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      showsVerticalScrollIndicator={false}>
+
       {activeProject && (
         <View style={styles.projectContext}>
           <View style={styles.contextDot} />
@@ -131,7 +131,62 @@ export default function MoreScreen() {
       {/* Subscription & Settings Section */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
-        
+
+        {/* ── Sign In / Profile ── */}
+        {isAuthenticated ? (
+          <TouchableOpacity
+            style={styles.subscriptionCard}
+            onPress={() => router.push('/auth/profile' as never)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.subIconWrap, { backgroundColor: '#34D39918' }]}>
+              <UserCircle color="#34D399" size={22} />
+            </View>
+            <View style={styles.subTextWrap}>
+              <Text style={styles.subTitle}>{user?.user_metadata?.display_name || 'My Account'}</Text>
+              <Text style={styles.subSubtitle}>{user?.email || 'Signed in'}</Text>
+            </View>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.subscriptionCard}
+            onPress={() => router.push('/auth/sign-in' as never)}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.subIconWrap, { backgroundColor: '#60A5FA18' }]}>
+              <LogIn color="#60A5FA" size={22} />
+            </View>
+            <View style={styles.subTextWrap}>
+              <Text style={styles.subTitle}>Sign In</Text>
+              <Text style={styles.subSubtitle}>Sync across devices & collaborate</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* ── Sync Settings (only if signed in) ── */}
+        {isAuthenticated && (
+          <TouchableOpacity
+            style={styles.settingsRow}
+            onPress={() => router.push('/settings/sync' as never)}
+            activeOpacity={0.7}
+          >
+            <Cloud color={Colors.text.secondary} size={18} />
+            <Text style={styles.settingsRowText}>Sync Settings</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* ── Devices (only if signed in) ── */}
+        {isAuthenticated && (
+          <TouchableOpacity
+            style={styles.settingsRow}
+            onPress={() => router.push('/settings/devices' as never)}
+            activeOpacity={0.7}
+          >
+            <Smartphone color={Colors.text.secondary} size={18} />
+            <Text style={styles.settingsRowText}>My Devices</Text>
+          </TouchableOpacity>
+        )}
+
         {/* Pro Status / Upgrade */}
         <TouchableOpacity
           style={styles.subscriptionCard}
