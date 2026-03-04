@@ -4,7 +4,7 @@
 // Design:
 //   1. AsyncStorage is always the source of truth for instant local reads
 //   2. Mutations are queued (syncQueue.ts) and pushed to Supabase in background
-//   3. Remote changes are pulled incrementally (since last sync timestamp)
+//   3. Remote changes are pulled incrementally (since last sync timestamp
 //   4. Conflicts resolved via last-write-wins on updated_at
 //   5. Soft deletes (deleted_at) are synced then purged after 30 days
 // ---------------------------------------------------------------------------
@@ -69,6 +69,7 @@ function convertRowIds(row: Record<string, any>): Record<string, any> {
   if (row.location_id) row.location_id = ensureUUID(row.location_id);
   if (row.crew_member_id) row.crew_member_id = ensureUUID(row.crew_member_id);
   if (row.invited_by) row.invited_by = ensureUUID(row.invited_by);
+  if (row.schedule_day_id) row.schedule_day_id = ensureUUID(row.schedule_day_id);
   return row;
 }
 
