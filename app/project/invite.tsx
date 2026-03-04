@@ -61,7 +61,7 @@ export default function InviteScreen() {
           user_id: null,
           email: email.trim().toLowerCase(),
           role: selectedRole,
-          invited_by: user.id,
+          // invited_by: user.id,
           accepted_at: null, // Pending until they accept
         });
 
