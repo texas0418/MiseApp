@@ -53,6 +53,8 @@ export default function InviteScreen() {
         return;
       }
 
+
+      const { error } = await supabase
         .from('project_members')
         .insert({
           project_id: activeProjectId,
