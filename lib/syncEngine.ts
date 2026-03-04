@@ -33,43 +33,100 @@ function isValidUUID(str: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 }
 
-/**
- * Convert a non-UUID id (like a timestamp "1772595741080") into a
- * deterministic, valid UUID so the same local ID always maps to the
- * same UUID in Supabase.
- */
 function deterministicUUID(input: string): string {
   let hex: string;
   try {
     hex = BigInt(input).toString(16).padStart(32, '0').slice(0, 32);
   } catch {
-    // If input isn't a number, hash it simply
-    let h = 0;
+    // If input isn't a number, hash it with a better spread
+    let h1 = 0x811c9dc5;
     for (let i = 0; i < input.length; i++) {
-      h = ((h << 5) - h + input.charCodeAt(i)) | 0;
+      h1 ^= input.charCodeAt(i);
+      h1 = Math.imul(h1, 0x01000193);
     }
-    hex = Math.abs(h).toString(16).padStart(32, '0').slice(0, 32);
+    let h2 = 0x1234abcd;
+    for (let i = 0; i < input.length; i++) {
+      h2 ^= input.charCodeAt(i);
+      h2 = Math.imul(h2, 0x5bd1e995);
+    }
+    hex = ((Math.abs(h1) >>> 0).toString(16).padStart(8, '0') +
+           (Math.abs(h2) >>> 0).toString(16).padStart(8, '0')).padEnd(32, '0');
   }
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
-/** Convert any id field to UUID if it isn't already */
 function ensureUUID(value: string | null | undefined): string | null | undefined {
   if (!value) return value;
+  if (typeof value !== 'string') value = String(value);
   if (isValidUUID(value)) return value;
   return deterministicUUID(value);
 }
 
 /** Convert all known id/FK fields in a row to UUIDs */
 function convertRowIds(row: Record<string, any>): Record<string, any> {
-  if (row.id) row.id = ensureUUID(row.id);
-  if (row.project_id) row.project_id = ensureUUID(row.project_id);
-  if (row.shot_id) row.shot_id = ensureUUID(row.shot_id);
-  if (row.scene_id) row.scene_id = ensureUUID(row.scene_id);
-  if (row.location_id) row.location_id = ensureUUID(row.location_id);
-  if (row.crew_member_id) row.crew_member_id = ensureUUID(row.crew_member_id);
-  if (row.invited_by) row.invited_by = ensureUUID(row.invited_by);
+  // Convert any field ending in _id that looks like it should be a UUID
+  for (const key of Object.keys(row)) {
+    if ((key === 'id' || key.endsWith('_id')) && row[key] && typeof row[key] === 'string') {
+      if (!isValidUUID(row[key])) {
+        row[key] = deterministicUUID(row[key]);
+      }
+    }
+  }
   return row;
+}
+
+// ---------------------------------------------------------------------------
+// Known Supabase columns per table — strip anything not in this list
+// This prevents "Could not find column X in schema cache" errors
+// ---------------------------------------------------------------------------
+
+const KNOWN_COLUMNS: Record<string, string[] | null> = {
+  // null means "allow all columns" (we haven't restricted it)
+  projects: ['id', 'user_id', 'title', 'description', 'genre', 'format', 'status', 'cover_image', 'created_at', 'updated_at', 'deleted_at', 'project_id'],
+  shots: ['id', 'user_id', 'project_id', 'scene', 'shot_number', 'shot_type', 'shot_size', 'movement', 'lens', 'description', 'notes', 'duration', 'location', 'status', 'sort_order', 'created_at', 'updated_at', 'deleted_at'],
+  schedule_days: ['id', 'user_id', 'project_id', 'date', 'title', 'description', 'status', 'scenes', 'call_time', 'wrap_time', 'location', 'notes', 'created_at', 'updated_at', 'deleted_at'],
+  crew_members: ['id', 'user_id', 'project_id', 'name', 'role', 'department', 'email', 'phone', 'notes', 'created_at', 'updated_at', 'deleted_at'],
+  takes: ['id', 'user_id', 'project_id', 'shot_id', 'take_number', 'is_circled', 'notes', 'duration', 'timecode_in', 'timecode_out', 'rating', 'created_at', 'updated_at', 'deleted_at'],
+  scene_breakdowns: ['id', 'user_id', 'project_id', 'scene_number', 'title', 'description', 'cast', 'extras', 'props', 'wardrobe', 'vehicles', 'special_equipment', 'notes', 'created_at', 'updated_at', 'deleted_at'],
+  location_scouts: ['id', 'user_id', 'project_id', 'name', 'address', 'description', 'contact', 'phone', 'notes', 'photos', 'rating', 'status', 'latitude', 'longitude', 'created_at', 'updated_at', 'deleted_at'],
+  budget_items: ['id', 'user_id', 'project_id', 'category', 'description', 'estimated', 'actual', 'notes', 'status', 'vendor', 'created_at', 'updated_at', 'deleted_at'],
+  continuity_notes: ['id', 'user_id', 'project_id', 'scene', 'shot', 'description', 'notes', 'photos', 'created_at', 'updated_at', 'deleted_at'],
+  vfx_shots: ['id', 'user_id', 'project_id', 'shot_id', 'description', 'status', 'vendor', 'complexity', 'deadline', 'notes', 'created_at', 'updated_at', 'deleted_at'],
+  festival_submissions: ['id', 'user_id', 'project_id', 'festival_name', 'deadline', 'status', 'category', 'fee', 'notes', 'submission_date', 'notification_date', 'created_at', 'updated_at', 'deleted_at'],
+  production_notes: ['id', 'user_id', 'project_id', 'title', 'content', 'category', 'tags', 'created_at', 'updated_at', 'deleted_at'],
+  mood_board_items: ['id', 'user_id', 'project_id', 'title', 'image_url', 'description', 'category', 'tags', 'sort_order', 'created_at', 'updated_at', 'deleted_at'],
+  call_sheet_entries: ['id', 'user_id', 'project_id', 'date', 'general_call_time', 'location', 'notes', 'scenes', 'cast_calls', 'crew_calls', 'created_at', 'updated_at', 'deleted_at'],
+  director_credits: ['id', 'user_id', 'project_id', 'title', 'role', 'year', 'description', 'created_at', 'updated_at', 'deleted_at'],
+  shot_references: ['id', 'user_id', 'project_id', 'title', 'image_url', 'description', 'source', 'tags', 'created_at', 'updated_at', 'deleted_at'],
+  wrap_reports: ['id', 'user_id', 'project_id', 'date', 'scenes_completed', 'setups', 'notes', 'call_time', 'wrap_time', 'created_at', 'updated_at', 'deleted_at'],
+  location_weather: ['id', 'user_id', 'project_id', 'location', 'date', 'temperature', 'conditions', 'wind', 'humidity', 'sunrise', 'sunset', 'golden_hour_am', 'golden_hour_pm', 'notes', 'created_at', 'updated_at', 'deleted_at'],
+  blocking_notes: ['id', 'user_id', 'project_id', 'scene', 'title', 'description', 'diagram', 'notes', 'created_at', 'updated_at', 'deleted_at'],
+  color_references: ['id', 'user_id', 'project_id', 'title', 'description', 'image_url', 'lut_name', 'notes', 'tags', 'created_at', 'updated_at', 'deleted_at'],
+  time_entries: ['id', 'user_id', 'project_id', 'crew_member_id', 'date', 'call_time', 'wrap_time', 'meal_start', 'meal_end', 'notes', 'overtime', 'created_at', 'updated_at', 'deleted_at'],
+  script_sides: ['id', 'user_id', 'project_id', 'scene', 'pages', 'date', 'notes', 'created_at', 'updated_at', 'deleted_at'],
+  cast_members: ['id', 'user_id', 'project_id', 'name', 'character', 'email', 'phone', 'agent', 'notes', 'created_at', 'updated_at', 'deleted_at'],
+  lookbook_items: ['id', 'user_id', 'project_id', 'title', 'image_url', 'description', 'category', 'tags', 'sort_order', 'created_at', 'updated_at', 'deleted_at'],
+  director_statements: ['id', 'user_id', 'project_id', 'title', 'content', 'created_at', 'updated_at', 'deleted_at'],
+  scene_selects: ['id', 'user_id', 'project_id', 'scene', 'take_id', 'shot_id', 'notes', 'rating', 'is_selected', 'created_at', 'updated_at', 'deleted_at'],
+  director_messages: ['id', 'user_id', 'project_id', 'to', 'subject', 'body', 'sent_at', 'created_at', 'updated_at', 'deleted_at'],
+};
+
+/**
+ * Strip any columns from a row that aren't in the known schema.
+ * This prevents "Could not find column X in schema cache" errors.
+ * If a table isn't in KNOWN_COLUMNS, allow all columns through.
+ */
+function stripUnknownColumns(table: string, row: Record<string, any>): Record<string, any> {
+  const known = KNOWN_COLUMNS[table];
+  if (!known) return row; // no restriction
+
+  const cleaned: Record<string, any> = {};
+  for (const key of Object.keys(row)) {
+    if (known.includes(key)) {
+      cleaned[key] = row[key];
+    }
+  }
+  return cleaned;
 }
 
 // ---------------------------------------------------------------------------
@@ -160,11 +217,12 @@ async function pushSingleItem(item: SyncQueueItem, userId: string): Promise<void
   const { table, recordId, action, data } = item;
 
   if ((action === 'insert' || action === 'update') && data) {
-    const row = recordToSnake(data);
+    let row = recordToSnake(data);
     row.user_id = userId;
     convertRowIds(row);
     row.updated_at = new Date().toISOString();
-    if (action === 'insert') delete row.created_at; // Let Supabase default
+    if (action === 'insert') delete row.created_at;
+    row = stripUnknownColumns(table, row);
 
     const { error } = await supabase.from(table).upsert(row, { onConflict: 'id' });
     if (error) throw error;
@@ -172,7 +230,6 @@ async function pushSingleItem(item: SyncQueueItem, userId: string): Promise<void
 
   if (action === 'delete') {
     const safeId = ensureUUID(recordId) || recordId;
-    // Soft delete
     const { error } = await supabase
       .from(table)
       .update({ deleted_at: new Date().toISOString() })
@@ -316,15 +373,24 @@ export async function initialUpload(userId: string): Promise<number> {
   for (const config of SYNCABLE_TABLES) {
     try {
       const localRaw = await AsyncStorage.getItem(config.storageKey);
-      if (!localRaw) continue;
+      if (!localRaw) {
+        console.log(`[SyncEngine] No local data for ${config.table} (key: ${config.storageKey})`);
+        continue;
+      }
       const items: Record<string, any>[] = JSON.parse(localRaw);
-      if (items.length === 0) continue;
+      if (items.length === 0) {
+        console.log(`[SyncEngine] Empty array for ${config.table}`);
+        continue;
+      }
+
+      console.log(`[SyncEngine] Uploading ${items.length} items for ${config.table}`);
 
       const rows = items.map((item) => {
-        const row = recordToSnake(item);
+        let row = recordToSnake(item);
         row.user_id = userId;
         convertRowIds(row);
         row.updated_at = row.updated_at || new Date().toISOString();
+        row = stripUnknownColumns(config.table, row);
         return row;
       });
 
@@ -333,18 +399,20 @@ export async function initialUpload(userId: string): Promise<number> {
         const batch = rows.slice(i, i + 100);
         const { error } = await supabase.from(config.table).upsert(batch, { onConflict: 'id' });
         if (error) {
-          console.warn(`[SyncEngine] Upload error ${config.table}:`, error.message);
+          console.error(`[SyncEngine] Upload error ${config.table}:`, error.message, '\nFirst row keys:', Object.keys(batch[0]).join(', '));
         } else {
+          console.log(`[SyncEngine] ✅ Uploaded ${batch.length} rows to ${config.table}`);
           uploaded += batch.length;
         }
       }
 
       await setLastSyncTime(config.table, new Date().toISOString());
     } catch (error: any) {
-      console.warn(`[SyncEngine] Upload failed ${config.table}:`, error.message);
+      console.error(`[SyncEngine] Upload failed ${config.table}:`, error.message);
     }
   }
 
+  console.log(`[SyncEngine] Initial upload complete: ${uploaded} total records`);
   return uploaded;
 }
 
