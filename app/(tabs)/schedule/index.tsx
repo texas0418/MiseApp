@@ -37,7 +37,6 @@ function ScheduleCard({ day, onDelete }: { day: ScheduleDay; onDelete: () => voi
   );
 
   return (
-    <PermissionGate resource="schedule">
     <Swipeable ref={swipeableRef} renderRightActions={renderRightActions} overshootRight={false}>
       <TouchableOpacity
         style={[styles.scheduleCard, expanded && styles.scheduleCardExpanded]}
@@ -162,6 +161,7 @@ export default function ScheduleScreen() {
   }
 
   return (
+    <PermissionGate resource="schedule">
     <View style={styles.container}>
       <View style={styles.projectBanner}>
         <CalendarDays color={Colors.accent.gold} size={16} />

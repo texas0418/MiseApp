@@ -50,7 +50,6 @@ function ShotCard({ shot, onEdit, onDelete }: { shot: Shot; onEdit: () => void; 
   );
 
   return (
-    <PermissionGate resource="shots">
     <Swipeable ref={swipeableRef} renderRightActions={renderRightActions} overshootRight={false}>
       <TouchableOpacity
         style={[styles.shotCard, expanded && styles.shotCardExpanded]}
@@ -170,6 +169,7 @@ export default function ShotsScreen() {
   }
 
   return (
+    <PermissionGate resource="shots">
     <View style={styles.container}>
       <View style={{ position: 'absolute', top: 14, right: 20, zIndex: 10 }}><ImportButton entityKey="shots" variant="compact" />
         <AIImportButton entityKey="shots" variant="compact" /></View>

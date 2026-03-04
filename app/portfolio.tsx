@@ -9,7 +9,6 @@ import PermissionGate from '@/contexts/PermissionGate';
 
 function CreditCard({ credit }: { credit: DirectorCredit }) {
   return (
-    <PermissionGate resource="portfolio">
     <View style={styles.creditCard}>
       <View style={styles.creditLeft}>
         <Text style={styles.creditYear}>{credit.year}</Text>
@@ -51,6 +50,7 @@ export default function PortfolioScreen() {
   const sorted = [...directorCredits].sort((a, b) => parseInt(b.year) - parseInt(a.year));
 
   return (
+    <PermissionGate resource="portfolio">
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Stack.Screen options={{ title: 'Director Portfolio' }} />
 

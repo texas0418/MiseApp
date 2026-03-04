@@ -99,7 +99,6 @@ export default function ExportShareScreen() {
 
   if (!activeProject) {
     return (
-      <PermissionGate resource="export">
       <View style={styles.empty}>
         <AlertCircle color={Colors.text.tertiary} size={48} />
         <Text style={styles.emptyTitle}>No project selected</Text>
@@ -120,6 +119,7 @@ export default function ExportShareScreen() {
   };
 
   return (
+    <PermissionGate resource="export">
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Stack.Screen options={{ title: 'Export & Share' }} />
 
