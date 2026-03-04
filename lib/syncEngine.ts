@@ -64,8 +64,8 @@ function ensureUUID(value: string | null | undefined): string | null | undefined
 
 /** Convert all known id/FK fields in a row to UUIDs */
 function convertRowIds(row: Record<string, any>): Record<string, any> {
-<<<<<<< HEAD
-  // Convert any field ending in _id that looks like it should be a UUID
+  // Convert any id or FK field to UUID — covers id, project_id, shot_id,
+  // location_id, schedule_day_id, crew_member_id, invited_by, etc.
   for (const key of Object.keys(row)) {
     if ((key === 'id' || key.endsWith('_id')) && row[key] && typeof row[key] === 'string') {
       if (!isValidUUID(row[key])) {
@@ -73,16 +73,6 @@ function convertRowIds(row: Record<string, any>): Record<string, any> {
       }
     }
   }
-=======
-  if (row.id) row.id = ensureUUID(row.id);
-  if (row.project_id) row.project_id = ensureUUID(row.project_id);
-  if (row.shot_id) row.shot_id = ensureUUID(row.shot_id);
-  if (row.scene_id) row.scene_id = ensureUUID(row.scene_id);
-  if (row.location_id) row.location_id = ensureUUID(row.location_id);
-  if (row.crew_member_id) row.crew_member_id = ensureUUID(row.crew_member_id);
-  if (row.invited_by) row.invited_by = ensureUUID(row.invited_by);
-  if (row.schedule_day_id) row.schedule_day_id = ensureUUID(row.schedule_day_id);
->>>>>>> b78f3da3e2512fc520502e02200cdfd286b81fb6
   return row;
 }
 
