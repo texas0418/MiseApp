@@ -53,19 +53,10 @@ export default function InviteScreen() {
         return;
       }
 
-      // Look up user by email to get their user_id (if they have an account)
-      // For now, store the invitation with email — they'll claim it on sign-up
-      const { data: invitedUser } = await supabase
-        .from('auth.users' as any)
-        .select('id')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
-
-      const { error } = await supabase
         .from('project_members')
         .insert({
           project_id: activeProjectId,
-          user_id: invitedUser?.id || null,
+          user_id: null,
           email: email.trim().toLowerCase(),
           role: selectedRole,
           invited_by: user.id,
