@@ -1,7 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import { FileText, MapPin, DollarSign, Clapperboard, BookOpen, BookOpenCheck, Aperture, Sparkles, Trophy, Palette, StickyNote, ClipboardList, User, Users, Layers, Image, CloudSun, Share2, Move, Paintbrush, Clock, Drama, ListChecks, BookHeart, Star as StarIcon, Megaphone, Crown, Shield, ExternalLink, RotateCcw, LogIn, UserCircle, Smartphone, Cloud } from 'lucide-react-native';
+import { FileText, Users2, MapPin, DollarSign, Clapperboard, BookOpen, BookOpenCheck, Aperture, Sparkles, Trophy, Palette, StickyNote, ClipboardList, User, Users, Layers, Image, CloudSun, Share2, Move, Paintbrush, Clock, Drama, ListChecks, BookHeart, Star as StarIcon, Megaphone, Crown, Shield, ExternalLink, RotateCcw, LogIn, UserCircle, Smartphone, Cloud } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -184,6 +184,14 @@ export default function MoreScreen() {
           >
             <Smartphone color={Colors.text.secondary} size={18} />
             <Text style={styles.settingsRowText}>My Devices</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Team */}
+        {isAuthenticated && activeProject && (
+          <TouchableOpacity style={styles.settingsRow} onPress={() => router.push("/project/team" as never)} activeOpacity={0.7}>
+            <Users2 color={Colors.text.secondary} size={18} />
+            <Text style={styles.settingsRowText}>Project Team</Text>
           </TouchableOpacity>
         )}
 
