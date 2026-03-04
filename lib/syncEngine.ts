@@ -26,6 +26,53 @@ import {
 } from '@/lib/syncQueue';
 
 // ---------------------------------------------------------------------------
+// UUID helpers — app uses numeric IDs, Supabase expects UUIDs
+// ---------------------------------------------------------------------------
+
+function isValidUUID(str: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+}
+
+/**
+ * Convert a non-UUID id (like a timestamp "1772595741080") into a
+ * deterministic, valid UUID so the same local ID always maps to the
+ * same UUID in Supabase.
+ */
+function deterministicUUID(input: string): string {
+  let hex: string;
+  try {
+    hex = BigInt(input).toString(16).padStart(32, '0').slice(0, 32);
+  } catch {
+    // If input isn't a number, hash it simply
+    let h = 0;
+    for (let i = 0; i < input.length; i++) {
+      h = ((h << 5) - h + input.charCodeAt(i)) | 0;
+    }
+    hex = Math.abs(h).toString(16).padStart(32, '0').slice(0, 32);
+  }
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
+}
+
+/** Convert any id field to UUID if it isn't already */
+function ensureUUID(value: string | null | undefined): string | null | undefined {
+  if (!value) return value;
+  if (isValidUUID(value)) return value;
+  return deterministicUUID(value);
+}
+
+/** Convert all known id/FK fields in a row to UUIDs */
+function convertRowIds(row: Record<string, any>): Record<string, any> {
+  if (row.id) row.id = ensureUUID(row.id);
+  if (row.project_id) row.project_id = ensureUUID(row.project_id);
+  if (row.shot_id) row.shot_id = ensureUUID(row.shot_id);
+  if (row.scene_id) row.scene_id = ensureUUID(row.scene_id);
+  if (row.location_id) row.location_id = ensureUUID(row.location_id);
+  if (row.crew_member_id) row.crew_member_id = ensureUUID(row.crew_member_id);
+  if (row.invited_by) row.invited_by = ensureUUID(row.invited_by);
+  return row;
+}
+
+// ---------------------------------------------------------------------------
 // Sync cursor — tracks last sync time per table
 // ---------------------------------------------------------------------------
 
@@ -94,6 +141,7 @@ export async function pushLocalChanges(userId: string): Promise<{
       await dequeue(item.queueId);
       pushed++;
     } catch (error: any) {
+      console.error(`[SyncEngine] Push failed for ${item.table}/${item.recordId}:`, error.message);
       await markFailed(item.queueId, error.message || 'Unknown error');
       failed++;
     }
@@ -114,6 +162,7 @@ async function pushSingleItem(item: SyncQueueItem, userId: string): Promise<void
   if ((action === 'insert' || action === 'update') && data) {
     const row = recordToSnake(data);
     row.user_id = userId;
+    convertRowIds(row);
     row.updated_at = new Date().toISOString();
     if (action === 'insert') delete row.created_at; // Let Supabase default
 
@@ -122,11 +171,12 @@ async function pushSingleItem(item: SyncQueueItem, userId: string): Promise<void
   }
 
   if (action === 'delete') {
+    const safeId = ensureUUID(recordId) || recordId;
     // Soft delete
     const { error } = await supabase
       .from(table)
       .update({ deleted_at: new Date().toISOString() })
-      .eq('id', recordId);
+      .eq('id', safeId);
     if (error) throw error;
   }
 }
@@ -273,6 +323,7 @@ export async function initialUpload(userId: string): Promise<number> {
       const rows = items.map((item) => {
         const row = recordToSnake(item);
         row.user_id = userId;
+        convertRowIds(row);
         row.updated_at = row.updated_at || new Date().toISOString();
         return row;
       });
