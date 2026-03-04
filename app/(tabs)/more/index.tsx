@@ -111,11 +111,7 @@ export default function MoreScreen() {
   const router = useRouter();
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}>
-
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       {activeProject && (
         <View style={styles.projectContext}>
           <View style={styles.contextDot} />
@@ -187,11 +183,24 @@ export default function MoreScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Team */}
-        {isAuthenticated && activeProject && (
-          <TouchableOpacity style={styles.settingsRow} onPress={() => router.push("/project/team" as never)} activeOpacity={0.7}>
-            <Users2 color={Colors.text.secondary} size={18} />
-            <Text style={styles.settingsRowText}>Project Team</Text>
+        {/* ── Project Team — always visible when signed in; dimmed if no active project ── */}
+        {isAuthenticated && (
+          <TouchableOpacity
+            style={[styles.settingsRow, !activeProject && styles.settingsRowDisabled]}
+            onPress={() => {
+              if (activeProject) {
+                router.push('/project/team' as never);
+              }
+            }}
+            activeOpacity={activeProject ? 0.7 : 1}
+          >
+            <Users2 color={activeProject ? Colors.text.secondary : Colors.text.tertiary} size={18} />
+            <Text style={[styles.settingsRowText, !activeProject && styles.settingsRowTextDisabled]}>
+              Project Team
+            </Text>
+            {!activeProject && (
+              <Text style={styles.settingsRowHint}>Open a project first</Text>
+            )}
           </TouchableOpacity>
         )}
 
@@ -396,9 +405,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border.subtle,
   },
+  settingsRowDisabled: {
+    opacity: 0.4,
+  },
   settingsRowText: {
     flex: 1,
     fontSize: 14,
     color: Colors.text.primary,
+  },
+  settingsRowTextDisabled: {
+    color: Colors.text.tertiary,
+  },
+  settingsRowHint: {
+    fontSize: 11,
+    color: Colors.text.tertiary,
+    fontStyle: 'italic',
   },
 });
