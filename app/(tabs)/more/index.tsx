@@ -159,49 +159,31 @@ export default function MoreScreen() {
           </TouchableOpacity>
         )}
 
-        {/* ── Sync Settings (only if signed in) ── */}
+        {/* ── Sync / Devices / Team — grouped card ── */}
         {isAuthenticated && (
-          <TouchableOpacity
-            style={styles.settingsRow}
-            onPress={() => router.push('/settings/sync' as never)}
-            activeOpacity={0.7}
-          >
-            <Cloud color={Colors.text.secondary} size={18} />
-            <Text style={styles.settingsRowText}>Sync Settings</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* ── Devices (only if signed in) ── */}
-        {isAuthenticated && (
-          <TouchableOpacity
-            style={styles.settingsRow}
-            onPress={() => router.push('/settings/devices' as never)}
-            activeOpacity={0.7}
-          >
-            <Smartphone color={Colors.text.secondary} size={18} />
-            <Text style={styles.settingsRowText}>My Devices</Text>
-          </TouchableOpacity>
-        )}
-
-        {/* ── Project Team — always visible when signed in; dimmed if no active project ── */}
-        {isAuthenticated && (
-          <TouchableOpacity
-            style={[styles.settingsRow, !activeProject && styles.settingsRowDisabled]}
-            onPress={() => {
-              if (activeProject) {
-                router.push('/project/team' as never);
-              }
-            }}
-            activeOpacity={activeProject ? 0.7 : 1}
-          >
-            <Users2 color={activeProject ? Colors.text.secondary : Colors.text.tertiary} size={18} />
-            <Text style={[styles.settingsRowText, !activeProject && styles.settingsRowTextDisabled]}>
-              Project Team
-            </Text>
-            {!activeProject && (
-              <Text style={styles.settingsRowHint}>Open a project first</Text>
-            )}
-          </TouchableOpacity>
+          <View style={styles.settingsGroup}>
+            <TouchableOpacity style={styles.settingsRow} onPress={() => router.push('/settings/sync' as never)} activeOpacity={0.7}>
+              <Cloud color={Colors.text.secondary} size={18} />
+              <Text style={styles.settingsRowText}>Sync Settings</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.settingsRow} onPress={() => router.push('/settings/devices' as never)} activeOpacity={0.7}>
+              <Smartphone color={Colors.text.secondary} size={18} />
+              <Text style={styles.settingsRowText}>My Devices</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.settingsRowLast, !activeProject && styles.settingsRowDisabled]}
+              onPress={() => { if (activeProject) router.push('/project/team' as never); }}
+              activeOpacity={activeProject ? 0.7 : 1}
+            >
+              <Users2 color={activeProject ? Colors.text.secondary : Colors.text.tertiary} size={18} />
+              <Text style={[styles.settingsRowText, !activeProject && styles.settingsRowTextDisabled]}>
+                Project Team
+              </Text>
+              {!activeProject && (
+                <Text style={styles.settingsRowHint}>Open a project first</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         )}
 
         {/* Pro Status / Upgrade */}
@@ -228,37 +210,39 @@ export default function MoreScreen() {
 
         {/* Manage Subscription (if Pro) */}
         {isPro && (
+          <View style={styles.settingsGroup}>
+            <TouchableOpacity
+              style={styles.settingsRowLast}
+              onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}
+              activeOpacity={0.7}
+            >
+              <Shield color={Colors.text.secondary} size={18} />
+              <Text style={styles.settingsRowText}>Manage Subscription</Text>
+              <ExternalLink color={Colors.text.tertiary} size={14} />
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Restore Purchases + Privacy Policy — grouped */}
+        <View style={styles.settingsGroup}>
           <TouchableOpacity
             style={styles.settingsRow}
-            onPress={() => Linking.openURL('https://apps.apple.com/account/subscriptions')}
+            onPress={() => router.push('/paywall' as never)}
+            activeOpacity={0.7}
+          >
+            <RotateCcw color={Colors.text.secondary} size={18} />
+            <Text style={styles.settingsRowText}>Restore Purchases</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.settingsRowLast}
+            onPress={() => Linking.openURL('https://texas0418.github.io/MiseApp/')}
             activeOpacity={0.7}
           >
             <Shield color={Colors.text.secondary} size={18} />
-            <Text style={styles.settingsRowText}>Manage Subscription</Text>
+            <Text style={styles.settingsRowText}>Privacy Policy</Text>
             <ExternalLink color={Colors.text.tertiary} size={14} />
           </TouchableOpacity>
-        )}
-
-        {/* Restore Purchases */}
-        <TouchableOpacity
-          style={styles.settingsRow}
-          onPress={() => router.push('/paywall' as never)}
-          activeOpacity={0.7}
-        >
-          <RotateCcw color={Colors.text.secondary} size={18} />
-          <Text style={styles.settingsRowText}>Restore Purchases</Text>
-        </TouchableOpacity>
-
-        {/* Privacy Policy */}
-        <TouchableOpacity
-          style={styles.settingsRow}
-          onPress={() => Linking.openURL('https://texas0418.github.io/MiseApp/')}
-          activeOpacity={0.7}
-        >
-          <Shield color={Colors.text.secondary} size={18} />
-          <Text style={styles.settingsRowText}>Privacy Policy</Text>
-          <ExternalLink color={Colors.text.tertiary} size={14} />
-        </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -396,6 +380,14 @@ const styles = StyleSheet.create({
     color: Colors.text.inverse,
     letterSpacing: 0.5,
   },
+  settingsGroup: {
+    backgroundColor: Colors.bg.card,
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: Colors.border.subtle,
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
   settingsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -404,6 +396,13 @@ const styles = StyleSheet.create({
     gap: 12,
     borderBottomWidth: 0.5,
     borderBottomColor: Colors.border.subtle,
+  },
+  settingsRowLast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    gap: 12,
   },
   settingsRowDisabled: {
     opacity: 0.4,
