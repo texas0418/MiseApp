@@ -50,7 +50,7 @@ function deterministicUUID(input: string): string {
       h2 = Math.imul(h2, 0x5bd1e995);
     }
     hex = ((Math.abs(h1) >>> 0).toString(16).padStart(8, '0') +
-           (Math.abs(h2) >>> 0).toString(16).padStart(8, '0')).padEnd(32, '0');
+      (Math.abs(h2) >>> 0).toString(16).padStart(8, '0')).padEnd(32, '0');
   }
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
@@ -164,7 +164,9 @@ type SyncStatusListener = (status: SyncStatus, detail?: string) => void;
 const listeners: SyncStatusListener[] = [];
 let currentStatus: SyncStatus = 'idle';
 
-export function getSyncStatus(): SyncStatus { return currentStatus; }
+export function getSyncStatus(): SyncStatus {
+  return currentStatus;
+}
 
 export function onSyncStatusChange(listener: SyncStatusListener): () => void {
   listeners.push(listener);
@@ -215,8 +217,10 @@ async function pushSingleItem(item: SyncQueueItem, userId: string): Promise<void
     row.user_id = userId;
     convertRowIds(row);
     row.updated_at = new Date().toISOString();
-    if (action === 'insert') delete row.created_at;
-    row = applyPushAliases(table, row);       // remap imageUrl→cover_image etc.
+    // FIX: provide created_at fallback instead of deleting it —
+    // some tables have created_at NOT NULL with no database default
+    if (action === 'insert') row.created_at = row.created_at || new Date().toISOString();
+    row = applyPushAliases(table, row); // remap imageUrl→cover_image etc.
     row = stripUnknownColumns(table, row);
     const { error } = await supabase.from(table).upsert(row, { onConflict: 'id' });
     if (error) throw error;
@@ -237,6 +241,7 @@ async function pushSingleItem(item: SyncQueueItem, userId: string): Promise<void
 // ---------------------------------------------------------------------------
 export async function pullRemoteChanges(userId: string): Promise<{ tables: number; records: number }> {
   let totalRecords = 0;
+
   for (const config of SYNCABLE_TABLES) {
     try {
       const pulled = await pullTableChanges(config, userId);
@@ -245,6 +250,7 @@ export async function pullRemoteChanges(userId: string): Promise<{ tables: numbe
       console.warn(`[SyncEngine] Failed to pull ${config.table}:`, error.message);
     }
   }
+
   return { tables: SYNCABLE_TABLES.length, records: totalRecords };
 }
 
@@ -259,9 +265,11 @@ async function pullTableChanges(config: TableConfig, userId: string): Promise<nu
   if (config.table === 'projects') {
     query = query.eq('user_id', userId);
   }
+
   if (lastSync) {
     query = query.gt('updated_at', lastSync);
   }
+
   query = query.limit(1000);
 
   const { data: rows, error } = await query;
@@ -272,7 +280,11 @@ async function pullTableChanges(config: TableConfig, userId: string): Promise<nu
   const localRaw = await AsyncStorage.getItem(config.storageKey);
   let localItems: Record<string, any>[] = [];
   if (localRaw) {
-    try { localItems = JSON.parse(localRaw); } catch { localItems = []; }
+    try {
+      localItems = JSON.parse(localRaw);
+    } catch {
+      localItems = [];
+    }
   }
 
   const localMap = new Map<string, Record<string, any>>();
@@ -365,7 +377,9 @@ export async function initialUpload(userId: string): Promise<number> {
         row.user_id = userId;
         convertRowIds(row);
         row.updated_at = row.updated_at || new Date().toISOString();
-        row = applyPushAliases(config.table, row);     // remap imageUrl→cover_image etc.
+        // FIX: always provide created_at — some tables have NOT NULL with no default
+        row.created_at = row.created_at || new Date().toISOString();
+        row = applyPushAliases(config.table, row); // remap imageUrl→cover_image etc.
         row = stripUnknownColumns(config.table, row);
         return row;
       });
