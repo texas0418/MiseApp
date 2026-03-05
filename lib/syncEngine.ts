@@ -2,13 +2,13 @@
 // lib/syncEngine.ts — Core sync logic for offline-first multi-device sync
 //
 // Design:
-//   1. AsyncStorage is always the source of truth for instant local reads
-//   2. Mutations are queued (syncQueue.ts) and pushed to Supabase in background
-//   3. Remote changes are pulled incrementally (since last sync timestamp
-//   4. Conflicts resolved via last-write-wins on updated_at
-//   5. Soft deletes (deleted_at) are synced then purged after 30 days
+// 1. AsyncStorage is always the source of truth for instant local reads
+// 2. Mutations are queued (syncQueue.ts) and pushed to Supabase in background
+// 3. Remote changes are pulled incrementally (since last sync timestamp)
+// 4. Conflicts resolved via last-write-wins on updated_at
+// 5. Field-level merge: remote null/undefined fields never overwrite local values
+// 6. Soft deletes (deleted_at) are synced then purged after 30 days
 // ---------------------------------------------------------------------------
-
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 import {
@@ -16,6 +16,8 @@ import {
   type TableConfig,
   recordToSnake,
   recordToCamel,
+  applyPushAliases,
+  applyPullAliases,
 } from '@/lib/syncConfig';
 import {
   getPendingItems,
@@ -28,7 +30,6 @@ import {
 // ---------------------------------------------------------------------------
 // UUID helpers — app uses numeric IDs, Supabase expects UUIDs
 // ---------------------------------------------------------------------------
-
 function isValidUUID(str: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
 }
@@ -38,7 +39,6 @@ function deterministicUUID(input: string): string {
   try {
     hex = BigInt(input).toString(16).padStart(32, '0').slice(0, 32);
   } catch {
-    // If input isn't a number, hash it with a better spread
     let h1 = 0x811c9dc5;
     for (let i = 0; i < input.length; i++) {
       h1 ^= input.charCodeAt(i);
@@ -62,10 +62,7 @@ function ensureUUID(value: string | null | undefined): string | null | undefined
   return deterministicUUID(value);
 }
 
-/** Convert all known id/FK fields in a row to UUIDs */
 function convertRowIds(row: Record<string, any>): Record<string, any> {
-  // Convert any id or FK field to UUID — covers id, project_id, shot_id,
-  // location_id, schedule_day_id, crew_member_id, invited_by, etc.
   for (const key of Object.keys(row)) {
     if ((key === 'id' || key.endsWith('_id')) && row[key] && typeof row[key] === 'string') {
       if (!isValidUUID(row[key])) {
@@ -77,13 +74,10 @@ function convertRowIds(row: Record<string, any>): Record<string, any> {
 }
 
 // ---------------------------------------------------------------------------
-// Known Supabase columns per table — strip anything not in this list
-// This prevents "Could not find column X in schema cache" errors
+// Known Supabase columns per table
 // ---------------------------------------------------------------------------
-
 const KNOWN_COLUMNS: Record<string, string[] | null> = {
-  // null means "allow all columns" (we haven't restricted it)
-  projects: ['id', 'user_id', 'title', 'description', 'genre', 'format', 'status', 'cover_image', 'created_at', 'updated_at', 'deleted_at', 'project_id'],
+  projects: ['id', 'user_id', 'title', 'logline', 'genre', 'format', 'status', 'cover_image', 'created_at', 'updated_at', 'deleted_at', 'project_id'],
   shots: ['id', 'user_id', 'project_id', 'scene', 'shot_number', 'shot_type', 'shot_size', 'movement', 'lens', 'description', 'notes', 'duration', 'location', 'status', 'sort_order', 'created_at', 'updated_at', 'deleted_at'],
   schedule_days: ['id', 'user_id', 'project_id', 'date', 'title', 'description', 'status', 'scenes', 'call_time', 'wrap_time', 'location', 'notes', 'created_at', 'updated_at', 'deleted_at'],
   crew_members: ['id', 'user_id', 'project_id', 'name', 'role', 'department', 'email', 'phone', 'notes', 'created_at', 'updated_at', 'deleted_at'],
@@ -96,7 +90,6 @@ const KNOWN_COLUMNS: Record<string, string[] | null> = {
   festival_submissions: ['id', 'user_id', 'project_id', 'festival_name', 'deadline', 'status', 'category', 'fee', 'notes', 'submission_date', 'notification_date', 'created_at', 'updated_at', 'deleted_at'],
   production_notes: ['id', 'user_id', 'project_id', 'title', 'content', 'category', 'tags', 'created_at', 'updated_at', 'deleted_at'],
   mood_board_items: ['id', 'user_id', 'project_id', 'title', 'image_url', 'description', 'category', 'tags', 'sort_order', 'created_at', 'updated_at', 'deleted_at'],
-  call_sheet_entries: ['id', 'user_id', 'project_id', 'date', 'general_call_time', 'location', 'notes', 'scenes', 'cast_calls', 'crew_calls', 'created_at', 'updated_at', 'deleted_at'],
   director_credits: ['id', 'user_id', 'project_id', 'title', 'role', 'year', 'description', 'created_at', 'updated_at', 'deleted_at'],
   shot_references: ['id', 'user_id', 'project_id', 'title', 'image_url', 'description', 'source', 'tags', 'created_at', 'updated_at', 'deleted_at'],
   wrap_reports: ['id', 'user_id', 'project_id', 'date', 'scenes_completed', 'setups', 'notes', 'call_time', 'wrap_time', 'created_at', 'updated_at', 'deleted_at'],
@@ -112,28 +105,41 @@ const KNOWN_COLUMNS: Record<string, string[] | null> = {
   director_messages: ['id', 'user_id', 'project_id', 'to', 'subject', 'body', 'sent_at', 'created_at', 'updated_at', 'deleted_at'],
 };
 
-/**
- * Strip any columns from a row that aren't in the known schema.
- * This prevents "Could not find column X in schema cache" errors.
- * If a table isn't in KNOWN_COLUMNS, allow all columns through.
- */
 function stripUnknownColumns(table: string, row: Record<string, any>): Record<string, any> {
   const known = KNOWN_COLUMNS[table];
-  if (!known) return row; // no restriction
-
+  if (!known) return row;
   const cleaned: Record<string, any> = {};
   for (const key of Object.keys(row)) {
-    if (known.includes(key)) {
-      cleaned[key] = row[key];
-    }
+    if (known.includes(key)) cleaned[key] = row[key];
   }
   return cleaned;
 }
 
 // ---------------------------------------------------------------------------
-// Sync cursor — tracks last sync time per table
+// Field-level merge: remote wins for non-null fields when timestamps tie/remote wins;
+// local fields are KEPT if the remote value is null/undefined.
+// This prevents sparse Supabase rows (e.g. seeded with only title+id) from
+// wiping rich local data like coverImage, genre, status, etc.
 // ---------------------------------------------------------------------------
+function mergeRecords(
+  local: Record<string, any>,
+  remote: Record<string, any>,
+): Record<string, any> {
+  const merged = { ...local };
+  for (const key of Object.keys(remote)) {
+    const remoteVal = remote[key];
+    // Only overwrite local value if remote has a real (non-null) value
+    if (remoteVal !== null && remoteVal !== undefined) {
+      merged[key] = remoteVal;
+    }
+    // If remote is null/undefined, keep whatever local has
+  }
+  return merged;
+}
 
+// ---------------------------------------------------------------------------
+// Sync cursor
+// ---------------------------------------------------------------------------
 const SYNC_CURSOR_PREFIX = 'mise_sync_cursor_';
 
 export async function getLastSyncTime(table: string): Promise<string | null> {
@@ -147,24 +153,18 @@ export async function setLastSyncTime(table: string, timestamp: string): Promise
 export async function clearAllSyncCursors(): Promise<void> {
   const keys = await AsyncStorage.getAllKeys();
   const cursorKeys = keys.filter((k) => k.startsWith(SYNC_CURSOR_PREFIX));
-  if (cursorKeys.length > 0) {
-    await AsyncStorage.multiRemove(cursorKeys);
-  }
+  if (cursorKeys.length > 0) await AsyncStorage.multiRemove(cursorKeys);
 }
 
 // ---------------------------------------------------------------------------
-// Sync status — observable by UI
+// Sync status
 // ---------------------------------------------------------------------------
-
 export type SyncStatus = 'idle' | 'syncing' | 'error' | 'offline';
-
 type SyncStatusListener = (status: SyncStatus, detail?: string) => void;
 const listeners: SyncStatusListener[] = [];
 let currentStatus: SyncStatus = 'idle';
 
-export function getSyncStatus(): SyncStatus {
-  return currentStatus;
-}
+export function getSyncStatus(): SyncStatus { return currentStatus; }
 
 export function onSyncStatusChange(listener: SyncStatusListener): () => void {
   listeners.push(listener);
@@ -182,11 +182,7 @@ function setStatus(status: SyncStatus, detail?: string) {
 // ---------------------------------------------------------------------------
 // Push local changes to Supabase
 // ---------------------------------------------------------------------------
-
-export async function pushLocalChanges(userId: string): Promise<{
-  pushed: number;
-  failed: number;
-}> {
+export async function pushLocalChanges(userId: string): Promise<{ pushed: number; failed: number }> {
   const items = getPendingItems();
   if (items.length === 0) return { pushed: 0, failed: 0 };
 
@@ -205,11 +201,8 @@ export async function pushLocalChanges(userId: string): Promise<{
     }
   }
 
-  // Clean up permanently failed items
   const pruned = await pruneFailedItems(3);
-  if (pruned.length > 0) {
-    console.warn(`[SyncEngine] Pruned ${pruned.length} permanently failed items`);
-  }
+  if (pruned.length > 0) console.warn(`[SyncEngine] Pruned ${pruned.length} permanently failed items`);
 
   return { pushed, failed };
 }
@@ -223,8 +216,8 @@ async function pushSingleItem(item: SyncQueueItem, userId: string): Promise<void
     convertRowIds(row);
     row.updated_at = new Date().toISOString();
     if (action === 'insert') delete row.created_at;
+    row = applyPushAliases(table, row);       // remap imageUrl→cover_image etc.
     row = stripUnknownColumns(table, row);
-
     const { error } = await supabase.from(table).upsert(row, { onConflict: 'id' });
     if (error) throw error;
   }
@@ -242,13 +235,8 @@ async function pushSingleItem(item: SyncQueueItem, userId: string): Promise<void
 // ---------------------------------------------------------------------------
 // Pull remote changes from Supabase (incremental)
 // ---------------------------------------------------------------------------
-
-export async function pullRemoteChanges(userId: string): Promise<{
-  tables: number;
-  records: number;
-}> {
+export async function pullRemoteChanges(userId: string): Promise<{ tables: number; records: number }> {
   let totalRecords = 0;
-
   for (const config of SYNCABLE_TABLES) {
     try {
       const pulled = await pullTableChanges(config, userId);
@@ -257,7 +245,6 @@ export async function pullRemoteChanges(userId: string): Promise<{
       console.warn(`[SyncEngine] Failed to pull ${config.table}:`, error.message);
     }
   }
-
   return { tables: SYNCABLE_TABLES.length, records: totalRecords };
 }
 
@@ -272,11 +259,9 @@ async function pullTableChanges(config: TableConfig, userId: string): Promise<nu
   if (config.table === 'projects') {
     query = query.eq('user_id', userId);
   }
-
   if (lastSync) {
     query = query.gt('updated_at', lastSync);
   }
-
   query = query.limit(1000);
 
   const { data: rows, error } = await query;
@@ -291,15 +276,15 @@ async function pullTableChanges(config: TableConfig, userId: string): Promise<nu
   }
 
   const localMap = new Map<string, Record<string, any>>();
-  for (const item of localItems) {
-    localMap.set(item.id, item);
-  }
+  for (const item of localItems) localMap.set(item.id, item);
 
-  // Merge remote into local
   let mergedCount = 0;
-  for (const row of rows) {
-    const camelRecord = recordToCamel<Record<string, any>>(row);
 
+  for (const row of rows) {
+    let camelRecord = recordToCamel<Record<string, any>>(row);
+    camelRecord = applyPullAliases(config.table, camelRecord); // cover_image → imageUrl etc.
+
+    // Soft-deleted remote record — remove locally
     if (camelRecord.deletedAt) {
       localMap.delete(camelRecord.id);
       mergedCount++;
@@ -307,25 +292,28 @@ async function pullTableChanges(config: TableConfig, userId: string): Promise<nu
     }
 
     const localItem = localMap.get(camelRecord.id);
+
     if (!localItem) {
+      // New remote record not in local — add it
       localMap.set(camelRecord.id, camelRecord);
       mergedCount++;
       continue;
     }
 
-    // Last-write-wins
+    // Both exist — last-write-wins on timestamp, but with field-level merge
     const remoteTime = new Date(camelRecord.updatedAt || 0).getTime();
-    const localTime = new Date(localItem.updatedAt || 0).getTime();
+    const localTime = new Date(localItem.updatedAt || localItem.createdAt || 0).getTime();
+
     if (remoteTime >= localTime) {
-      localMap.set(camelRecord.id, camelRecord);
+      // Remote is newer — merge but preserve local fields where remote is null
+      localMap.set(camelRecord.id, mergeRecords(localItem, camelRecord));
       mergedCount++;
     }
+    // else: local is newer, keep local as-is
   }
 
-  // Save merged data
   await AsyncStorage.setItem(config.storageKey, JSON.stringify(Array.from(localMap.values())));
 
-  // Update cursor
   const latestRow = rows[rows.length - 1];
   if (latestRow?.updated_at) {
     await setLastSyncTime(config.table, latestRow.updated_at);
@@ -337,16 +325,10 @@ async function pullTableChanges(config: TableConfig, userId: string): Promise<nu
 // ---------------------------------------------------------------------------
 // Full sync — push then pull
 // ---------------------------------------------------------------------------
-
 let syncInProgress = false;
 
-export async function fullSync(userId: string): Promise<{
-  pushed: number;
-  pulled: number;
-  failed: number;
-}> {
+export async function fullSync(userId: string): Promise<{ pushed: number; pulled: number; failed: number }> {
   if (syncInProgress) return { pushed: 0, pulled: 0, failed: 0 };
-
   syncInProgress = true;
   setStatus('syncing');
 
@@ -367,42 +349,33 @@ export async function fullSync(userId: string): Promise<{
 // ---------------------------------------------------------------------------
 // Initial upload — push all local data for first-time sync
 // ---------------------------------------------------------------------------
-
 export async function initialUpload(userId: string): Promise<number> {
   let uploaded = 0;
 
   for (const config of SYNCABLE_TABLES) {
     try {
       const localRaw = await AsyncStorage.getItem(config.storageKey);
-      if (!localRaw) {
-        console.log(`[SyncEngine] No local data for ${config.table} (key: ${config.storageKey})`);
-        continue;
-      }
-      const items: Record<string, any>[] = JSON.parse(localRaw);
-      if (items.length === 0) {
-        console.log(`[SyncEngine] Empty array for ${config.table}`);
-        continue;
-      }
+      if (!localRaw) continue;
 
-      console.log(`[SyncEngine] Uploading ${items.length} items for ${config.table}`);
+      const items: Record<string, any>[] = JSON.parse(localRaw);
+      if (items.length === 0) continue;
 
       const rows = items.map((item) => {
         let row = recordToSnake(item);
         row.user_id = userId;
         convertRowIds(row);
         row.updated_at = row.updated_at || new Date().toISOString();
+        row = applyPushAliases(config.table, row);     // remap imageUrl→cover_image etc.
         row = stripUnknownColumns(config.table, row);
         return row;
       });
 
-      // Batch upsert (100 at a time)
       for (let i = 0; i < rows.length; i += 100) {
         const batch = rows.slice(i, i + 100);
         const { error } = await supabase.from(config.table).upsert(batch, { onConflict: 'id' });
         if (error) {
-          console.error(`[SyncEngine] Upload error ${config.table}:`, error.message, '\nFirst row keys:', Object.keys(batch[0]).join(', '));
+          console.error(`[SyncEngine] Upload error ${config.table}:`, error.message);
         } else {
-          console.log(`[SyncEngine] ✅ Uploaded ${batch.length} rows to ${config.table}`);
           uploaded += batch.length;
         }
       }
@@ -413,17 +386,41 @@ export async function initialUpload(userId: string): Promise<number> {
     }
   }
 
-  console.log(`[SyncEngine] Initial upload complete: ${uploaded} total records`);
   return uploaded;
 }
 
 // ---------------------------------------------------------------------------
 // Force full re-sync
 // ---------------------------------------------------------------------------
-
 export async function forceFullResync(userId: string): Promise<void> {
   await clearAllSyncCursors();
   await pullRemoteChanges(userId);
+}
+
+// ---------------------------------------------------------------------------
+// One-time data migrations
+// Bump MIGRATION_VERSION to force a fresh re-seed from mock data on next launch.
+// ---------------------------------------------------------------------------
+const MIGRATION_VERSION = 'mise_migration_v2'; // bump this string to trigger reset
+
+export async function runMigrationsIfNeeded(): Promise<boolean> {
+  const done = await AsyncStorage.getItem(MIGRATION_VERSION);
+  if (done) return false; // already ran
+
+  console.log('[SyncEngine] Running one-time migration: clearing stale project cache');
+
+  // Clear only the projects storage key — forces reload from SAMPLE_PROJECTS fallback.
+  // Also clear all sync cursors so a fresh pull happens after re-seed.
+  try {
+    await AsyncStorage.removeItem('mise_projects');
+    await clearAllSyncCursors();
+    await AsyncStorage.setItem(MIGRATION_VERSION, 'done');
+    console.log('[SyncEngine] Migration complete — projects cache cleared');
+    return true;
+  } catch (e: any) {
+    console.warn('[SyncEngine] Migration failed:', e.message);
+    return false;
+  }
 }
 
 export function isSyncEnabled(userId: string | null | undefined): boolean {
