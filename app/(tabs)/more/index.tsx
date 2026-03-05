@@ -103,8 +103,8 @@ function ToolSection({ title, tools }: { title: string; tools: ToolItem[] }) {
 
 export default function MoreScreen() {
   const { activeProject } = useProjects();
-  const { isPro } = useSubscription();
-  const { restoreAndActivate, isPurchasing } = useDeviceLicense();
+  useSubscription(); // kept for RC SDK initialization
+  const { isPro, restoreAndActivate, isPurchasing } = useDeviceLicense();
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
 
