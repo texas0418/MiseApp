@@ -1,9 +1,10 @@
-import React, { useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Linking } from 'react-native';
+import React, { useRef, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Animated, Linking, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { FileText, Users2, MapPin, DollarSign, Clapperboard, BookOpen, BookOpenCheck, Aperture, Sparkles, Trophy, Palette, StickyNote, ClipboardList, User, Users, Layers, Image, CloudSun, Share2, Move, Paintbrush, Clock, Drama, ListChecks, BookHeart, Star as StarIcon, Megaphone, Crown, Shield, ExternalLink, RotateCcw, LogIn, UserCircle, Smartphone, Cloud } from 'lucide-react-native';
 import { useProjects } from '@/contexts/ProjectContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useDeviceLicense } from '@/contexts/DeviceLicenseContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLayout } from '@/utils/useLayout';
 import Colors from '@/constants/colors';
@@ -74,11 +75,7 @@ function ToolCard({ tool, index }: { tool: ToolItem; index: number }) {
 
   return (
     <Animated.View style={[styles.toolCardWrapper, { opacity: fadeAnim, transform: [{ scale: scaleAnim }], flexBasis: cardBasis as unknown as number }]}>
-      <TouchableOpacity
-        style={styles.toolCard}
-        onPress={() => router.push(tool.route as never)}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity style={styles.toolCard} onPress={() => router.push(tool.route as never)} activeOpacity={0.7}>
         <View style={[styles.toolIconWrap, { backgroundColor: tool.color + '18' }]}>
           <Icon color={tool.color} size={22} />
         </View>
@@ -107,8 +104,25 @@ function ToolSection({ title, tools }: { title: string; tools: ToolItem[] }) {
 export default function MoreScreen() {
   const { activeProject } = useProjects();
   const { isPro } = useSubscription();
+  const { restoreAndActivate, isPurchasing } = useDeviceLicense();
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
+
+  const handleRestore = async () => {
+    const result = await restoreAndActivate();
+    if (result.success) {
+      Alert.alert(
+        'Restored!',
+        'Your subscription and device license have been restored.',
+        [{ text: 'Great', onPress: () => router.push('/paywall' as never) }]
+      );
+    } else {
+      Alert.alert(
+        'Nothing to Restore',
+        result.error ?? 'No active Pro subscription was found for this Apple ID.',
+      );
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -130,11 +144,7 @@ export default function MoreScreen() {
 
         {/* ── Sign In / Profile ── */}
         {isAuthenticated ? (
-          <TouchableOpacity
-            style={styles.subscriptionCard}
-            onPress={() => router.push('/auth/profile' as never)}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={styles.subscriptionCard} onPress={() => router.push('/auth/profile' as never)} activeOpacity={0.7}>
             <View style={[styles.subIconWrap, { backgroundColor: '#34D39918' }]}>
               <UserCircle color="#34D399" size={22} />
             </View>
@@ -144,11 +154,7 @@ export default function MoreScreen() {
             </View>
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
-            style={styles.subscriptionCard}
-            onPress={() => router.push('/auth/sign-in' as never)}
-            activeOpacity={0.7}
-          >
+          <TouchableOpacity style={styles.subscriptionCard} onPress={() => router.push('/auth/sign-in' as never)} activeOpacity={0.7}>
             <View style={[styles.subIconWrap, { backgroundColor: '#60A5FA18' }]}>
               <LogIn color="#60A5FA" size={22} />
             </View>
@@ -159,7 +165,7 @@ export default function MoreScreen() {
           </TouchableOpacity>
         )}
 
-        {/* ── Sync / Devices / Team — grouped card ── */}
+        {/* ── Sync / Devices / Team ── */}
         {isAuthenticated && (
           <View style={styles.settingsGroup}>
             <TouchableOpacity style={styles.settingsRow} onPress={() => router.push('/settings/sync' as never)} activeOpacity={0.7}>
@@ -179,19 +185,13 @@ export default function MoreScreen() {
               <Text style={[styles.settingsRowText, !activeProject && styles.settingsRowTextDisabled]}>
                 Project Team
               </Text>
-              {!activeProject && (
-                <Text style={styles.settingsRowHint}>Open a project first</Text>
-              )}
+              {!activeProject && <Text style={styles.settingsRowHint}>Open a project first</Text>}
             </TouchableOpacity>
           </View>
         )}
 
-        {/* Pro Status / Upgrade */}
-        <TouchableOpacity
-          style={styles.subscriptionCard}
-          onPress={() => router.push('/paywall' as never)}
-          activeOpacity={0.7}
-        >
+        {/* ── Pro Status / Upgrade ── */}
+        <TouchableOpacity style={styles.subscriptionCard} onPress={() => router.push('/paywall' as never)} activeOpacity={0.7}>
           <View style={[styles.subIconWrap, isPro ? styles.subIconPro : styles.subIconFree]}>
             <Crown color={isPro ? Colors.accent.gold : Colors.text.tertiary} size={22} />
           </View>
@@ -208,7 +208,7 @@ export default function MoreScreen() {
           )}
         </TouchableOpacity>
 
-        {/* Manage Subscription (if Pro) */}
+        {/* ── Manage Subscription (Pro only) ── */}
         {isPro && (
           <View style={styles.settingsGroup}>
             <TouchableOpacity
@@ -223,16 +223,24 @@ export default function MoreScreen() {
           </View>
         )}
 
-        {/* Restore Purchases + Privacy Policy — grouped */}
+        {/* ── Restore Purchases + Privacy Policy ── */}
         <View style={styles.settingsGroup}>
           <TouchableOpacity
             style={styles.settingsRow}
-            onPress={() => router.push('/paywall' as never)}
+            onPress={handleRestore}
             activeOpacity={0.7}
+            disabled={isPurchasing}
           >
-            <RotateCcw color={Colors.text.secondary} size={18} />
-            <Text style={styles.settingsRowText}>Restore Purchases</Text>
+            {isPurchasing ? (
+              <ActivityIndicator size="small" color={Colors.text.secondary} />
+            ) : (
+              <RotateCcw color={Colors.text.secondary} size={18} />
+            )}
+            <Text style={[styles.settingsRowText, isPurchasing && { opacity: 0.5 }]}>
+              {isPurchasing ? 'Restoring…' : 'Restore Purchases'}
+            </Text>
           </TouchableOpacity>
+
           <TouchableOpacity
             style={styles.settingsRowLast}
             onPress={() => Linking.openURL('https://texas0418.github.io/MiseApp/')}
@@ -243,181 +251,41 @@ export default function MoreScreen() {
             <ExternalLink color={Colors.text.tertiary} size={14} />
           </TouchableOpacity>
         </View>
+
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.bg.primary,
-  },
-  content: {
-    paddingBottom: 40,
-  },
-  projectContext: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: Colors.accent.goldBg,
-    gap: 8,
-  },
-  contextDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.accent.gold,
-  },
-  contextText: {
-    fontSize: 12,
-    fontWeight: '600' as const,
-    color: Colors.accent.gold,
-    letterSpacing: 0.3,
-  },
-  section: {
-    paddingHorizontal: 16,
-    paddingTop: 20,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: '700' as const,
-    color: Colors.text.tertiary,
-    textTransform: 'uppercase' as const,
-    letterSpacing: 1.2,
-    marginBottom: 10,
-    paddingHorizontal: 4,
-  },
-  toolGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  toolCardWrapper: {
-    width: '48.5%' as unknown as number,
-    flexGrow: 0,
-    flexShrink: 0,
-    flexBasis: '48%',
-  },
-  toolCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bg.card,
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 0.5,
-    borderColor: Colors.border.subtle,
-    gap: 10,
-  },
-  toolIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  toolText: {
-    flex: 1,
-  },
-  toolLabel: {
-    fontSize: 13,
-    fontWeight: '600' as const,
-    color: Colors.text.primary,
-  },
-  toolSubtitle: {
-    fontSize: 10,
-    color: Colors.text.tertiary,
-    marginTop: 1,
-  },
-  // Subscription section
-  subscriptionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.bg.card,
-    borderRadius: 12,
-    padding: 14,
-    borderWidth: 0.5,
-    borderColor: Colors.border.subtle,
-    gap: 12,
-    marginBottom: 8,
-  },
-  subIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  subIconPro: {
-    backgroundColor: Colors.accent.goldBg,
-  },
-  subIconFree: {
-    backgroundColor: Colors.bg.tertiary,
-  },
-  subTextWrap: {
-    flex: 1,
-  },
-  subTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.text.primary,
-  },
-  subSubtitle: {
-    fontSize: 11,
-    color: Colors.text.tertiary,
-    marginTop: 2,
-  },
-  proBadge: {
-    backgroundColor: Colors.accent.gold,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  proBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: Colors.text.inverse,
-    letterSpacing: 0.5,
-  },
-  settingsGroup: {
-    backgroundColor: Colors.bg.card,
-    borderRadius: 12,
-    borderWidth: 0.5,
-    borderColor: Colors.border.subtle,
-    marginBottom: 8,
-    overflow: 'hidden',
-  },
-  settingsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 12,
-    borderBottomWidth: 0.5,
-    borderBottomColor: Colors.border.subtle,
-  },
-  settingsRowLast: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    gap: 12,
-  },
-  settingsRowDisabled: {
-    opacity: 0.4,
-  },
-  settingsRowText: {
-    flex: 1,
-    fontSize: 14,
-    color: Colors.text.primary,
-  },
-  settingsRowTextDisabled: {
-    color: Colors.text.tertiary,
-  },
-  settingsRowHint: {
-    fontSize: 11,
-    color: Colors.text.tertiary,
-    fontStyle: 'italic',
-  },
+  container: { flex: 1, backgroundColor: Colors.bg.primary },
+  content: { paddingBottom: 40 },
+  projectContext: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 10, backgroundColor: Colors.accent.goldBg, gap: 8 },
+  contextDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.accent.gold },
+  contextText: { fontSize: 12, fontWeight: '600' as const, color: Colors.accent.gold, letterSpacing: 0.3 },
+  section: { paddingHorizontal: 16, paddingTop: 20 },
+  sectionTitle: { fontSize: 11, fontWeight: '700' as const, color: Colors.text.tertiary, textTransform: 'uppercase' as const, letterSpacing: 1.2, marginBottom: 10, paddingHorizontal: 4 },
+  toolGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  toolCardWrapper: { width: '48.5%' as unknown as number, flexGrow: 0, flexShrink: 0, flexBasis: '48%' },
+  toolCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.card, borderRadius: 12, padding: 12, borderWidth: 0.5, borderColor: Colors.border.subtle, gap: 10 },
+  toolIconWrap: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  toolText: { flex: 1 },
+  toolLabel: { fontSize: 13, fontWeight: '600' as const, color: Colors.text.primary },
+  toolSubtitle: { fontSize: 10, color: Colors.text.tertiary, marginTop: 1 },
+  subscriptionCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.bg.card, borderRadius: 12, padding: 14, borderWidth: 0.5, borderColor: Colors.border.subtle, gap: 12, marginBottom: 8 },
+  subIconWrap: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  subIconPro: { backgroundColor: Colors.accent.goldBg },
+  subIconFree: { backgroundColor: Colors.bg.tertiary },
+  subTextWrap: { flex: 1 },
+  subTitle: { fontSize: 14, fontWeight: '600', color: Colors.text.primary },
+  subSubtitle: { fontSize: 11, color: Colors.text.tertiary, marginTop: 2 },
+  proBadge: { backgroundColor: Colors.accent.gold, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 3 },
+  proBadgeText: { fontSize: 10, fontWeight: '700', color: Colors.text.inverse, letterSpacing: 0.5 },
+  settingsGroup: { backgroundColor: Colors.bg.card, borderRadius: 12, borderWidth: 0.5, borderColor: Colors.border.subtle, marginBottom: 8, overflow: 'hidden' },
+  settingsRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, gap: 12, borderBottomWidth: 0.5, borderBottomColor: Colors.border.subtle },
+  settingsRowLast: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, paddingHorizontal: 14, gap: 12 },
+  settingsRowDisabled: { opacity: 0.4 },
+  settingsRowText: { flex: 1, fontSize: 14, color: Colors.text.primary },
+  settingsRowTextDisabled: { color: Colors.text.tertiary },
+  settingsRowHint: { fontSize: 11, color: Colors.text.tertiary, fontStyle: 'italic' },
 });
