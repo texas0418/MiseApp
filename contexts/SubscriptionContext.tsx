@@ -1,101 +1,134 @@
 /**
  * contexts/SubscriptionContext.tsx
- * 
- * RevenueCat Subscription Provider for Mise App
- * 
- * Initializes RevenueCat SDK, tracks Pro subscription status,
- * and exposes purchase/restore functions to the rest of the app.
- * 
+ *
+ * RevenueCat Subscription Provider — v2 Device Licensing Model
+ *
+ * Products:
+ *   com.mise.film_director_suite.pro_monthly         → $4.99/mo (base, 1st device)
+ *   com.mise.film_director_suite.pro_additional_device → $2.99/mo (each extra device)
+ *
  * Entitlement: "Mise Film Director Suite Pro"
- * Product: com.mise.film_director_suite.pro_monthly ($4.99/month)
+ *
+ * Flow:
+ *   - purchaseBase()           → buys the $4.99 monthly, grants entitlement
+ *   - purchaseAdditionalDevice() → buys the $2.99 add-on for extra devices
+ *   - restorePurchases()       → restores any active RC subscription
+ *   - After any successful purchase, DeviceLicenseContext calls activateCurrentDevice()
  */
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+} from 'react';
 import { Platform, AppState, AppStateStatus } from 'react-native';
 
-// RevenueCat types — these match the SDK's exported types
-// Using dynamic import pattern so the app doesn't crash if SDK isn't installed yet
+// RevenueCat — dynamic import so app doesn't crash if SDK isn't installed
 let Purchases: any = null;
 let LOG_LEVEL: any = null;
-
 try {
   const rc = require('react-native-purchases');
   Purchases = rc.default || rc.Purchases;
   LOG_LEVEL = rc.LOG_LEVEL;
 } catch (e) {
-  console.log('[Subscription] RevenueCat SDK not installed yet — running in free mode');
+  console.log('[Subscription] RevenueCat SDK not installed — running in free mode');
 }
 
-// ─── Constants ──────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
+
 const REVENUECAT_IOS_KEY = 'appl_hDSIJdgEdYkPSIavpEfPgjEImCA';
-const REVENUECAT_ANDROID_KEY = ''; // Add when Android is set up
+const REVENUECAT_ANDROID_KEY = '';
+
 const ENTITLEMENT_ID = 'Mise Film Director Suite Pro';
 
-// ─── Types ──────────────────────────────────────────────────────────────────
+// Product identifiers — must match App Store Connect exactly
+export const PRODUCT_IDS = {
+  /** Base subscription — $4.99/month, required for first device */
+  base: 'com.mise.film_director_suite.pro_monthly',
+  /** Add-on subscription — $2.99/month per additional device */
+  additionalDevice: 'com.mise.film_director_suite.pro_additional_device',
+} as const;
+
+// RevenueCat package identifiers set in the Offerings dashboard
+// '$rc_monthly' is RevenueCat's built-in identifier for MONTHLY packages
+export const PACKAGE_IDS = {
+  base: '$rc_monthly',
+  additionalDevice: 'mise_additional_device',
+} as const;
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
 interface SubscriptionState {
-  /** Whether RevenueCat has been initialized */
   isInitialized: boolean;
-  /** Whether the user has an active Pro subscription */
   isPro: boolean;
-  /** Whether a purchase/restore operation is in progress */
   isLoading: boolean;
-  /** Current offering packages available for purchase */
+  /** All available packages from the current RC Offering */
   packages: any[];
-  /** Error message from last failed operation */
+  /** The base $4.99 package, if available */
+  basePackage: any | null;
+  /** The additional device $2.99 package, if available */
+  additionalDevicePackage: any | null;
   error: string | null;
 }
 
 interface SubscriptionContextValue extends SubscriptionState {
-  /** Purchase the Pro subscription */
-  purchasePro: () => Promise<boolean>;
-  /** Restore previous purchases */
+  /** Purchase the base Pro subscription ($4.99/mo, first device) */
+  purchaseBase: () => Promise<boolean>;
+  /** Purchase an additional device slot ($2.99/mo) */
+  purchaseAdditionalDevice: () => Promise<boolean>;
+  /** Restore any previous purchases from the App Store */
   restorePurchases: () => Promise<boolean>;
-  /** Refresh subscription status */
+  /** Refresh subscription status (call after device activation) */
   refreshStatus: () => Promise<void>;
-  /** Check if a specific feature requires Pro */
-  requiresPro: (feature: ProFeature) => boolean;
+  /** @deprecated Use purchaseBase() instead */
+  purchasePro: () => Promise<boolean>;
 }
 
-export type ProFeature = 
+export type ProFeature =
   | 'spreadsheet_import'
   | 'ai_import'
   | 'unlimited_projects'
   | 'csv_templates'
-  | 'import_history';
+  | 'import_history'
+  | 'multi_device_sync';
 
-// Features that require Pro subscription
 const PRO_FEATURES: Set<ProFeature> = new Set([
   'spreadsheet_import',
   'ai_import',
   'unlimited_projects',
   'csv_templates',
   'import_history',
+  'multi_device_sync',
 ]);
 
-// Max free projects before Pro is required
 export const FREE_PROJECT_LIMIT = 2;
 
-// ─── Context ────────────────────────────────────────────────────────────────
+// ─── Context ──────────────────────────────────────────────────────────────────
+
 const SubscriptionContext = createContext<SubscriptionContextValue | null>(null);
 
-// ─── Provider ───────────────────────────────────────────────────────────────
+// ─── Provider ─────────────────────────────────────────────────────────────────
+
 export function SubscriptionProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<SubscriptionState>({
     isInitialized: false,
     isPro: false,
     isLoading: false,
     packages: [],
+    basePackage: null,
+    additionalDevicePackage: null,
     error: null,
   });
 
   const appState = useRef(AppState.currentState);
 
-  // Initialize RevenueCat
   useEffect(() => {
     initializeRevenueCat();
   }, []);
 
-  // Re-check subscription when app comes to foreground
   useEffect(() => {
     const subscription = AppState.addEventListener('change', handleAppStateChange);
     return () => subscription.remove();
@@ -108,9 +141,10 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     appState.current = nextState;
   }, []);
 
+  // ─── Initialization ──────────────────────────────────────────────────────
+
   const initializeRevenueCat = async () => {
     if (!Purchases) {
-      // SDK not installed — run in free mode for development
       console.log('[Subscription] Running in free mode (SDK not installed)');
       setState(prev => ({ ...prev, isInitialized: true, isPro: false }));
       return;
@@ -118,110 +152,168 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
 
     try {
       const apiKey = Platform.OS === 'ios' ? REVENUECAT_IOS_KEY : REVENUECAT_ANDROID_KEY;
-      
       if (!apiKey) {
         console.log('[Subscription] No API key for platform:', Platform.OS);
         setState(prev => ({ ...prev, isInitialized: true }));
         return;
       }
 
-      if (LOG_LEVEL) {
-        Purchases.setLogLevel(LOG_LEVEL.DEBUG);
-      }
-      
+      if (LOG_LEVEL) Purchases.setLogLevel(LOG_LEVEL.DEBUG);
       await Purchases.configure({ apiKey });
       console.log('[Subscription] RevenueCat initialized');
 
-      // Check current subscription status
-      await checkSubscriptionStatus();
-      
-      // Fetch available packages
-      await fetchOfferings();
-
+      await Promise.all([checkSubscriptionStatus(), fetchOfferings()]);
       setState(prev => ({ ...prev, isInitialized: true }));
     } catch (error: any) {
-      console.log('[Subscription] Init error:', error?.message || error);
-      setState(prev => ({ 
-        ...prev, 
-        isInitialized: true, 
-        error: 'Failed to initialize purchases' 
+      console.warn('[Subscription] Init error:', error?.message || error);
+      setState(prev => ({
+        ...prev,
+        isInitialized: true,
+        error: 'Failed to initialize purchases',
       }));
     }
   };
 
+  // ─── Status check ────────────────────────────────────────────────────────
+
   const checkSubscriptionStatus = async () => {
     if (!Purchases) return;
-
     try {
       const customerInfo = await Purchases.getCustomerInfo();
-      const hasProEntitlement = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
-      
-      setState(prev => ({ ...prev, isPro: hasProEntitlement, error: null }));
-      console.log('[Subscription] Pro status:', hasProEntitlement);
+      const isPro = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
+      setState(prev => ({ ...prev, isPro, error: null }));
+      console.log('[Subscription] Pro status:', isPro);
     } catch (error: any) {
-      console.log('[Subscription] Status check error:', error?.message || error);
+      console.warn('[Subscription] Status check error:', error?.message || error);
     }
   };
+
+  // ─── Offerings ───────────────────────────────────────────────────────────
 
   const fetchOfferings = async () => {
     if (!Purchases) return;
-
     try {
       const offerings = await Purchases.getOfferings();
-      const currentOffering = offerings?.current;
-      
-      if (currentOffering?.availablePackages?.length > 0) {
-        setState(prev => ({ ...prev, packages: currentOffering.availablePackages }));
-        console.log('[Subscription] Found', currentOffering.availablePackages.length, 'packages');
-      }
+      const current = offerings?.current;
+      const allPackages: any[] = current?.availablePackages ?? [];
+
+      // Find base package — the $rc_monthly or first MONTHLY type
+      const basePackage =
+        allPackages.find((p: any) =>
+          p.identifier === PACKAGE_IDS.base ||
+          p.packageType === 'MONTHLY'
+        ) ?? allPackages[0] ?? null;
+
+      // Find additional device package by our custom identifier
+      const additionalDevicePackage =
+        allPackages.find((p: any) =>
+          p.identifier === PACKAGE_IDS.additionalDevice ||
+          p.product?.productIdentifier === PRODUCT_IDS.additionalDevice
+        ) ?? null;
+
+      setState(prev => ({
+        ...prev,
+        packages: allPackages,
+        basePackage,
+        additionalDevicePackage,
+      }));
+
+      console.log(
+        '[Subscription] Offerings loaded — base:',
+        basePackage?.identifier ?? 'none',
+        'additional:',
+        additionalDevicePackage?.identifier ?? 'none (not yet created in ASC)'
+      );
     } catch (error: any) {
-      console.log('[Subscription] Offerings error:', error?.message || error);
+      console.warn('[Subscription] Offerings error:', error?.message || error);
     }
   };
 
-  const purchasePro = useCallback(async (): Promise<boolean> => {
+  // ─── Purchase helpers ────────────────────────────────────────────────────
+
+  const executePurchase = async (pkg: any | null, label: string): Promise<boolean> => {
     if (!Purchases) {
       setState(prev => ({ ...prev, error: 'Purchase not available in development mode' }));
       return false;
     }
-
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
-
-    try {
-      // Get the monthly package from offerings
-      const offerings = await Purchases.getOfferings();
-      const monthlyPackage = offerings?.current?.availablePackages?.find(
-        (pkg: any) => pkg.packageType === 'MONTHLY'
-      ) || offerings?.current?.availablePackages?.[0];
-
-      if (!monthlyPackage) {
-        setState(prev => ({ ...prev, isLoading: false, error: 'No subscription package available' }));
-        return false;
-      }
-
-      const { customerInfo } = await Purchases.purchasePackage(monthlyPackage);
-      const hasProEntitlement = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
-
-      setState(prev => ({ 
-        ...prev, 
-        isPro: hasProEntitlement, 
-        isLoading: false,
-        error: hasProEntitlement ? null : 'Purchase completed but entitlement not found'
+    if (!pkg) {
+      setState(prev => ({
+        ...prev,
+        error: `${label} package not available. Please try again later.`,
       }));
-
-      return hasProEntitlement;
-    } catch (error: any) {
-      const userCancelled = error?.userCancelled || error?.code === '1';
-      
-      setState(prev => ({ 
-        ...prev, 
-        isLoading: false,
-        error: userCancelled ? null : (error?.message || 'Purchase failed')
-      }));
-
       return false;
     }
-  }, []);
+
+    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    try {
+      const { customerInfo } = await Purchases.purchasePackage(pkg);
+      const isPro = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
+      setState(prev => ({
+        ...prev,
+        isPro,
+        isLoading: false,
+        error: isPro ? null : 'Purchase completed but entitlement not found',
+      }));
+      return isPro;
+    } catch (error: any) {
+      const userCancelled = error?.userCancelled || error?.code === '1';
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        error: userCancelled ? null : error?.message || 'Purchase failed',
+      }));
+      return false;
+    }
+  };
+
+  // ─── Public purchase functions ───────────────────────────────────────────
+
+  /**
+   * Purchase the base Pro subscription ($4.99/mo).
+   * Should be called when the user has 0 licensed devices.
+   * After success, call DeviceLicenseContext.activateCurrentDevice().
+   */
+  const purchaseBase = useCallback(async (): Promise<boolean> => {
+    // If package not loaded yet, try to fetch offerings first
+    let pkg = state.basePackage;
+    if (!pkg && Purchases) {
+      await fetchOfferings();
+      // Re-read from state after fetch — use the updated value from RC
+      try {
+        const offerings = await Purchases.getOfferings();
+        const allPkgs: any[] = offerings?.current?.availablePackages ?? [];
+        pkg = allPkgs.find((p: any) =>
+          p.identifier === PACKAGE_IDS.base || p.packageType === 'MONTHLY'
+        ) ?? allPkgs[0] ?? null;
+      } catch { /* use null */ }
+    }
+    return executePurchase(pkg, 'Base Pro');
+  }, [state.basePackage]);
+
+  /**
+   * Purchase an additional device slot ($2.99/mo).
+   * Should be called when the user already has at least 1 licensed device.
+   * After success, call DeviceLicenseContext.activateCurrentDevice().
+   */
+  const purchaseAdditionalDevice = useCallback(async (): Promise<boolean> => {
+    let pkg = state.additionalDevicePackage;
+    if (!pkg && Purchases) {
+      try {
+        const offerings = await Purchases.getOfferings();
+        const allPkgs: any[] = offerings?.current?.availablePackages ?? [];
+        pkg = allPkgs.find((p: any) =>
+          p.identifier === PACKAGE_IDS.additionalDevice ||
+          p.product?.productIdentifier === PRODUCT_IDS.additionalDevice
+        ) ?? null;
+      } catch { /* use null */ }
+    }
+    return executePurchase(pkg, 'Additional Device');
+  }, [state.additionalDevicePackage]);
+
+  /** @deprecated Use purchaseBase() */
+  const purchasePro = useCallback(() => purchaseBase(), [purchaseBase]);
+
+  // ─── Restore ─────────────────────────────────────────────────────────────
 
   const restorePurchases = useCallback(async (): Promise<boolean> => {
     if (!Purchases) {
@@ -230,46 +322,39 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
     }
 
     setState(prev => ({ ...prev, isLoading: true, error: null }));
-
     try {
       const customerInfo = await Purchases.restorePurchases();
-      const hasProEntitlement = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
-
-      setState(prev => ({ 
-        ...prev, 
-        isPro: hasProEntitlement, 
+      const isPro = customerInfo?.entitlements?.active?.[ENTITLEMENT_ID] !== undefined;
+      setState(prev => ({
+        ...prev,
+        isPro,
         isLoading: false,
-        error: hasProEntitlement ? null : 'No active subscription found'
+        error: isPro ? null : 'No active subscription found',
       }));
-
-      return hasProEntitlement;
+      return isPro;
     } catch (error: any) {
-      setState(prev => ({ 
-        ...prev, 
+      setState(prev => ({
+        ...prev,
         isLoading: false,
-        error: error?.message || 'Restore failed'
+        error: error?.message || 'Restore failed',
       }));
-
       return false;
     }
   }, []);
 
   const refreshStatus = useCallback(async () => {
-    await checkSubscriptionStatus();
-    await fetchOfferings();
+    await Promise.all([checkSubscriptionStatus(), fetchOfferings()]);
   }, []);
 
-  const requiresPro = useCallback((feature: ProFeature): boolean => {
-    if (state.isPro) return false;
-    return PRO_FEATURES.has(feature);
-  }, [state.isPro]);
+  // ─── Context value ───────────────────────────────────────────────────────
 
   const value: SubscriptionContextValue = {
     ...state,
+    purchaseBase,
+    purchaseAdditionalDevice,
     purchasePro,
     restorePurchases,
     refreshStatus,
-    requiresPro,
   };
 
   return (
@@ -279,7 +364,8 @@ export function SubscriptionProvider({ children }: { children: React.ReactNode }
   );
 }
 
-// ─── Hook ───────────────────────────────────────────────────────────────────
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
 export function useSubscription(): SubscriptionContextValue {
   const context = useContext(SubscriptionContext);
   if (!context) {
